@@ -61,15 +61,28 @@ class User_1_0{
             $sql = $id==0 ? "SELECT * FROM `songs`": "SELECT * FROM `songs` WHERE `ID`='$id'";
             $result = $this->sql->query($sql);
             $a = array();
-            foreach (mysqli_fetch_array($result) as $row){
-                $a["id"] = $row["ID"];
-                $a["name"] = $row["Songname"];
-                $a["info"] = json_decode($row["Songinfo"]);
-                $a["file"] = $row["Songfile"];
-                $a["comments"] = json_decode($row["Comments"]);
-                $a["upvotes"] = intval($row["Upvotes"]);
-                $a["downvotes"] = intval($row["Downvotes"]);
-                $a["active"] = boolval($row["Active"]);
+            if($id==0) {
+                foreach (mysqli_fetch_array($result) as $row) {
+                    $a[$row["ID"]]["id"] = $row["ID"];
+                    $a[$row["ID"]]["name"] = $row["Songname"];
+                    $a[$row["ID"]]["info"] = json_decode($row["Songinfo"]);
+                    $a[$row["ID"]]["file"] = $row["Songfile"];
+                    $a[$row["ID"]]["comments"] = json_decode($row["Comments"]);
+                    $a[$row["ID"]]["upvotes"] = intval($row["Upvotes"]);
+                    $a[$row["ID"]]["downvotes"] = intval($row["Downvotes"]);
+                    $a[$row["ID"]]["active"] = boolval($row["Active"]);
+                }
+            }else{
+                foreach (mysqli_fetch_array($result) as $row) {
+                    $a["id"] = $row["ID"];
+                    $a["name"] = $row["Songname"];
+                    $a["info"] = json_decode($row["Songinfo"]);
+                    $a["file"] = $row["Songfile"];
+                    $a["comments"] = json_decode($row["Comments"]);
+                    $a["upvotes"] = intval($row["Upvotes"]);
+                    $a["downvotes"] = intval($row["Downvotes"]);
+                    $a["active"] = boolval($row["Active"]);
+                }
             }
             return $a;
         }
@@ -157,6 +170,43 @@ class User_1_0{
 
 #endregion
 
+#region NewSong
+    public function getNewSong(int $id = 0){
+        $sql = $id==0 ? "SELECT * FROM `newsongs`": "SELECT * FROM `newsongs` WHERE `ID`='$id'";
+        $result = $this->sql->query($sql);
+        $a = array();
+        if($id==0) {
+            foreach (mysqli_fetch_array($result) as $row) {
+                $a[$row["ID"]]["id"] = $row["ID"];
+                $a[$row["ID"]]["name"] = $row["Songname"];
+                $a[$row["ID"]]["info"] = json_decode($row["Songinfo"]);
+                $a[$row["ID"]]["file"] = $row["Songfile"];
+            }
+        }else{
+            foreach (mysqli_fetch_array($result) as $row) {
+                $a["id"] = $row["ID"];
+                $a["name"] = $row["Songname"];
+                $a["info"] = json_decode($row["Songinfo"]);
+                $a["file"] = $row["Songfile"];
+            }
+        }
+        return $a;
+    }
 
+    public function addNewSong(string $name,array $info,string $file){
+        $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$info','$file')");
+    }
+
+    public function removeNewSong(int $id):bool{
+        if(empty($this->getNewSong($id))){ return false;}
+        $this->sql->query("DELETE FROM `newsongs` WHERE `ID`='$id'");
+        return empty($this->getNewSong($id));
+    }
+#endregion
+
+#region Charts
+
+
+#endregion
 
 }
