@@ -14,5 +14,5 @@ echo $user->username;
 $user = $api->loadClass("User");
 if(!$user->init()){echo("DB ERROR!");}
 
-
+echo("test");
 ?>
