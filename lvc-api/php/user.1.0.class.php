@@ -2,13 +2,12 @@
 
 class User_1_0{
 
-    private $api;
     private $sql;
 
-    public function __construct($api)
+    public function __construct()
     {
-        $this->api = $api;
-        $this->sql = $api->getMySql("lvcdata");
+        require_once(__DIR__ ."/../api/mysql/mysql_connetion.php");
+        $this->sql = new mysql_connetion();
     }
 
     public function init():bool{
@@ -28,7 +27,7 @@ class User_1_0{
         if($date == "all"){
             $sql = "SELECT `Date`,`History` FROM `history`";
         }
-        $result = $this->sql->query($sql);
+        $result = $this->sql->result($sql);
         $a = array();
         foreach (mysqli_fetch_array($result) as $row){
             if(!isset($row["Date"])){
@@ -59,7 +58,7 @@ class User_1_0{
     #region Info
         public function getSong(int $id=0):array{
             $sql = $id==0 ? "SELECT * FROM `songs`": "SELECT * FROM `songs` WHERE `ID`='$id'";
-            $result = $this->sql->query($sql);
+            $result = $this->sql->result($sql);
             $a = array();
             if($id==0) {
                 foreach (mysqli_fetch_array($result) as $row) {
@@ -153,7 +152,7 @@ class User_1_0{
     public function generateSongID():int{
         try {
             $i = random_int(0, 99999999);
-            while (mysqli_num_rows($this->sql->query("SELECT * FROM `songs` WHERE `ID`='$i'"))>0){
+            while (($this->sql->count("SELECT * FROM `songs` WHERE `ID`='$i'"))>0){
                 $i= random_int(0, 99999999);
             }
             return $i;
@@ -173,7 +172,7 @@ class User_1_0{
 #region NewSong
     public function getNewSong(int $id = 0){
         $sql = $id==0 ? "SELECT * FROM `newsongs`": "SELECT * FROM `newsongs` WHERE `ID`='$id'";
-        $result = $this->sql->query($sql);
+        $result = $this->sql->result($sql);
         $a = array();
         if($id==0) {
             foreach (mysqli_fetch_array($result) as $row) {
@@ -205,6 +204,7 @@ class User_1_0{
 #endregion
 
 #region Charts
+
 
 
 #endregion
