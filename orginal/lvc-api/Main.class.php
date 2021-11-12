@@ -2,11 +2,10 @@
 
 namespace wcf\system\lvc;
 
-//test
 class Main{
-
     use wcf\system\lvc\SQL;
-    private $sql;
+
+    private SQL $sql;
 
     public function __construct()
     {
@@ -47,7 +46,7 @@ class Main{
         if(empty($this->getHistory($d))){
             $this->sql->query("INSERT INTO `history`(`ID`, `Date`, `History`) VALUES (null,'$d','". json_encode($a, JSON_THROW_ON_ERROR) ."')");
         }else{
-            $this->sql->query("UPDATE `history` SET `History`='". json_encode($a, JSON_THROW_ON_ERROR) ."' WHERE `Date`='$d'");
+            $this->sql->query("UPDATE `history` SET `History`='". json_encode($a, JSON_THROW_ON_ERROR) ."' WHERE `Date`='".$d."'");
         }
     }
 
