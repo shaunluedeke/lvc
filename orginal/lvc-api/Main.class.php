@@ -38,8 +38,8 @@ class Main{
 
     /** @throws \JsonException */
     public function addHistory($data, $date=""):void{
-        $d = $date!=""? $date : date("d.m.Y");
-        $a = is_array($data) ? $data :$this->getHistory($d);
+        $d = $date!==""? $date : date("d.m.Y");
+        $a = !is_array($data) ? $data :$this->getHistory($d);
         if(!is_array($data)) {
             $a[]= $data;
         }

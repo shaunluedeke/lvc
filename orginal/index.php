@@ -23,7 +23,6 @@ $main = new Main();
 try{
     $main->init();
     echo("<pre>");
-        print_r($main->getSong(),true);
     echo("</pre>");
 
 }catch (Exception $e){
