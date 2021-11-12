@@ -14,6 +14,7 @@ echo $user->username;
 
 $form = new Form();
 
+$form->addTitle("Moin");
 $form->addText("das ist ein Test<br>ja es geht");
 
 echo($form->show());
