@@ -12,7 +12,7 @@ class Main{
         $this->sql = new SQL();
     }
 
-    public function init(){
+    public function init():void{
             $this->sql->query("CREATE TABLE IF NOT EXISTS `history` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Date` VARCHAR(200) NOT NULL , `History` TEXT NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
             $this->sql->query("CREATE TABLE IF NOT EXISTS `songs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , `Comments` TEXT NOT NULL , `Upvotes` INT(16) NOT NULL , `Downvotes` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
             $this->sql->query("CREATE TABLE IF NOT EXISTS `newsongs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
@@ -63,9 +63,9 @@ class Main{
                 foreach ($result as $row) {
                     $a[$row["ID"]]["id"] = $row["ID"];
                     $a[$row["ID"]]["name"] = $row["Songname"];
-                    try {$a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (JsonException $e) {}
+                    try {$a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                     $a[$row["ID"]]["file"] = $row["Songfile"];
-                    try {$a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);} catch (JsonException $e) {}
+                    try {$a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                     $a[$row["ID"]]["upvotes"] = (int)($row["Upvotes"]);
                     $a[$row["ID"]]["downvotes"] = (int)$row["Downvotes"];
                     $a[$row["ID"]]["active"] = (bool)$row["Active"];
@@ -74,9 +74,9 @@ class Main{
                 foreach ($result as $row) {
                     $a["id"] = $row["ID"];
                     $a["name"] = $row["Songname"];
-                    try {$a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (JsonException $e) {}
+                    try {$a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                     $a["file"] = $row["Songfile"];
-                    try {$a["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);} catch (JsonException $e) {}
+                    try {$a["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                     $a["upvotes"] = (int)($row["Upvotes"]);
                     $a["downvotes"] = (int)$row["Downvotes"];
                     $a["active"] = (bool)$row["Active"];
@@ -116,14 +116,14 @@ class Main{
             $a["comment"]=$comment;
             $a["time"]=date("H:M d.m.Y");
             $allcomments[$this->generateCommentID()]=$a;
-            $this->sql->query("UPDATE `songs` SET `Comments`='".json_encode($allcomments)."' WHERE `ID`='$id'");
+            try {$this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");} catch (\JsonException $e) {}
         }
         public function removeSongComment(int $id,$commentid){
             if(empty($this->getSong($id))){ return false;}
             $allcomments = $this->getSong($id)["comments"];
             if(!array_key_exists($commentid,$allcomments)){return false;}
             unset($allcomments[$commentid]);
-            $this->sql->query("UPDATE `songs` SET `Comments`='".json_encode($allcomments)."' WHERE `ID`='$id'");
+            try {$this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");} catch (\JsonException $e) {}
         }
     #endregion
 
@@ -133,13 +133,13 @@ class Main{
             return !$downvotes ? $this->getSong($id)["upvotes"] : $this->getSong($id)["downvotes"];
     }
 
-        public function addVote(int $id,int $amount=1,bool $downvotes=false){
+        public function addVote(int $id,int $amount=1,bool $downvotes=false):void{
             $sql = !$downvotes?"UPDATE `songs` SET `Upvotes`='".($this->getVoting($id,$downvotes)+$amount)."' WHERE `ID`='$id'"
                 :"UPDATE `songs` SET `Downvotes`='".($this->getVoting($id,$downvotes)+$amount)."' WHERE `ID`='$id'";
             $this->sql->query($sql);
         }
 
-        public function removeVote(int $id,int $amount=1,bool $downvotes=false){
+        public function removeVote(int $id,int $amount=1,bool $downvotes=false):void{
             $sql = !$downvotes?"UPDATE `songs` SET `Upvotes`='".($this->getVoting($id,$downvotes)-$amount)."' WHERE `ID`='$id'"
                 :"UPDATE `songs` SET `Downvotes`='".($this->getVoting($id,$downvotes)-$amount)."' WHERE `ID`='$id'";
             $this->sql->query($sql);
@@ -155,13 +155,13 @@ class Main{
                 $i= random_int(0, 99999999);
             }
             return $i;
-        } catch (Exception $e) {}
+        } catch (\Exception $e) {}
         return $this->generateSongID();
     }
     public function generateCommentID():int{
         try {
             return random_int(0, 999999999999);
-        } catch (Exception $e) {}
+        } catch (\Exception $e) {}
         return $this->generateSongID();
     }
     #endregion
@@ -169,7 +169,7 @@ class Main{
 #endregion
 
 #region NewSong
-    public function getNewSong(int $id = 0){
+    public function getNewSong(int $id = 0):array{
         $sql = $id===0 ? "SELECT * FROM `newsongs`": "SELECT * FROM `newsongs` WHERE `ID`='$id'";
         $result = $this->sql->result($sql);
         $a = array();
@@ -177,21 +177,21 @@ class Main{
             foreach (($result) as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
                 $a[$row["ID"]]["name"] = $row["Songname"];
-                try {$a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (JsonException $e) {}
+                try {$a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                 $a[$row["ID"]]["file"] = $row["Songfile"];
             }
         }else{
             foreach (($result) as $row) {
                 $a["id"] = $row["ID"];
                 $a["name"] = $row["Songname"];
-                try {$a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (JsonException $e) {}
+                try {$a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                 $a["file"] = $row["Songfile"];
             }
         }
         return $a;
     }
 
-    public function addNewSong(string $name,array $info,string $file){
+    public function addNewSong(string $name,array $info,string $file):void{
         $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$info','$file')");
     }
 
