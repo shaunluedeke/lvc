@@ -119,11 +119,12 @@ class Form
         $this->lastnum++;
     }
 
-    public function addUpload($title, $text, $id,bool $require=false): void
+    public function addUpload($title, $text, $id,$type = "*",bool $require=false): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "upload";
         $this->vars[$this->lastTitle][$this->lastnum]["title"] = $title;
+        $this->vars[$this->lastTitle][$this->lastnum]["type"] = $type;
         $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
         $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
@@ -308,7 +309,8 @@ class Form
                 } else if ($var["art"] === "password") {
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="password" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "upload") {
-                    $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' style="border: 2px dashed #e0e4e8;padding: 30px;padding-left: 200px;padding-right: 200px;" type="file" name="' . $id . '"  id="' . $id . '" accept="image/png">';
+                    $type = ($var["type"] !== "*") ? 'accept="'.$var["type"].'"' : "";
+                    $r .= '<input ' . $style . ' ' . $extra . ' '.$type.' '.$required.' style="border: 2px dashed #e0e4e8;padding: 30px;padding-left: 200px;padding-right: 200px;" type="file" name="' . $id . '"  id="' . $id . '" accept="image/png">';
                 } else if ($var["art"] === "number") {
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="number" id="' . $id . '" name="' . $id . '" min="' . $var["min"] . '" max="' . $var["max"] . '" step="' . $var["step"] . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "rage") {
