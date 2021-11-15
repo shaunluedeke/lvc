@@ -191,8 +191,8 @@ class Main{
         return $a;
     }
 
-    public function addNewSong(string $name,array $info,string $file):void{
-        $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$info','$file')");
+    public function addNewSong(string $name,array $info,string $file):bool{
+        return $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$info','$file')");
     }
 
     public function removeNewSong(int $id):bool{
