@@ -114,7 +114,7 @@ class Main{
             $a = array();
             $a["name"]=$name;
             $a["comment"]=$comment;
-            $a["time"]=date("H:M d.m.Y");
+            $a["time"]=date("H:M um d.m.Y");
             $allcomments[$this->generateCommentID()]=$a;
             try {$this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");} catch (\JsonException $e) {}
         }
@@ -145,6 +145,24 @@ class Main{
             $this->sql->query($sql);
         }
 
+        public function getTopSongs(int $limit=-1,int $offset=-1,bool $downvotes = false):array{
+            $limitstring = $limit===-1 ? "" : " LIMIT ".$limit;
+            $offsetstring = $offset===-1 ? "" : " OFFSET ".$offset;
+            $sql = !$downvotes?"SELECT * FROM `songs` ORDER BY `Upvotes` ASC".$limitstring.$offsetstring:"SELECT * FROM `songs` ORDER BY `Downvotes` ASC".$limitstring.$offsetstring;
+            $result = $this->sql->result($sql);
+            $a = array();
+            foreach ($result as $row) {
+                $a[$row["ID"]]["id"] = $row["ID"];
+                $a[$row["ID"]]["name"] = $row["Songname"];
+                try {$a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
+                $a[$row["ID"]]["file"] = $row["Songfile"];
+                try {$a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
+                $a[$row["ID"]]["upvotes"] = (int)($row["Upvotes"]);
+                $a[$row["ID"]]["downvotes"] = (int)$row["Downvotes"];
+                $a[$row["ID"]]["active"] = (bool)$row["Active"];
+            }
+            return $a;
+        }
     #endregion
 
     #region GenerateID

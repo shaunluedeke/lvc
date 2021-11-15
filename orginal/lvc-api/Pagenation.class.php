@@ -1,5 +1,6 @@
 <?php
 
+namespace wcf\system\lvc;
 class Pagenation
 {
 
