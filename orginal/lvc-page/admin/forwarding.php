@@ -4,18 +4,21 @@ use wcf\system\lvc\Main;
 
 class Forwarding
 {
-    private $http_refere;
-    private $main;
+    private string $http_refere;
+    private Main $main;
 
     function __construct($wcf_user_id, $type, $data)
     {
-        $main = new Main();
+        $this->main = new Main();
         if ($type === "songadd") {
             if (isset($data["files"]["songdata"])) {
                 $this->addSong($wcf_user_id, $data);
             } else {
                 $this->http_refere = "./index.php?head-add/&status=error&error=1003";
             }
+        }
+        if($type === "avadd"){
+            $this->addAV($wcf_user_id, $data);
         }
 
     }
@@ -44,6 +47,16 @@ class Forwarding
         } else {
             $this->http_refere = "./index.php?admin/&page=addsong&status=error&error=1001";
         }
+    }
+
+    function addAV($wcf_user_id, $data)
+    {
+       $i = $this->main->createCharts($data["startdate"],$data["enddate"],$data["songid"]);
+       if($i!==-1){
+           $this->http_refere="index.php?admin&page=av&id=$i";
+       }else{
+           $this->http_refere="index.php?admin&page=av&status=error";
+       }
     }
 
     function getReferer($http_refere)

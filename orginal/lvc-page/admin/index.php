@@ -56,18 +56,26 @@ switch($page){
     case "av":{
         $form = new Form();
         $id = $_GET["id"] ?? 0;
-
+        $action = $_GET["action"]??"";
+        if($action==="switchactive"){
+            $main->changeChartsActive($id);
+        }
+        if(($_GET["status"]??"") === "error"){
+            $form->addText("Something wend wrong!");
+        }
         $cl=$main->getCharts($id);
-        if(count($cl)===0){
-            $form->addTitle("Neue Abstimmungs Verwaltung");
+        if(count($cl)===0||$action==="add"){
+            $form->addTitle("Neue Abstimmungs Hinzufügen");
+            $form->addInput("Song IDs","Trennung mit ,","songids","",true);
+            $form->addCalender("Start Datum","","startdate");
+            $form->addCalender("Ende Datum","","enddate");
+            $form->addButton("Hinzufügen", "button", "avadd");
+            echo($form->show());
         }
 
         if(count($cl)===1){
             $id = $id!==0?$id:$cl[0]["id"];
-            $action = $_GET["action"]??"";
-            if($action==="switchactive"){
-                $main->changeChartsActive($id);
-            }
+
             $form->addTitle("Abstimmungs Verwaltung für ID: ".$id);
             $btn = $cl[$id]["active"] ? '<a href="index.php?admin&page=av&id='.$id.'&action=switchactive" class="btn btn-warning">Deaktivieren</a>' :
                                         '<a class="btn btn-success" href="index.php?admin&page=av&id='.$id.'&action=switchactive">Activieren</a>';
@@ -100,7 +108,7 @@ switch($page){
                 </tr>
                 ';
             }
-            $html.='</tbody></table>';
+            $html.='</tbody></table><br><br><a class="btn-primary" href="index.php?admin&page=av&action=add">Neue Hinzufügen</a>';
 
             $form->addText($html);
 
@@ -129,14 +137,16 @@ switch($page){
                         </tr>
                         ';
             }
-            $html.='</tbody></table>';
+            $html.='</tbody></table><a class="btn-primary" href="index.php?admin&page=av&action=add">Neue Hinzufügen</a>';
+            echo($form->show());
         }
 
         break;
     }
 
     default:{
-
+        $form->addText("<a href='index.php?admin&page=av' class='btn-primary'>Abstimmung verwalten</a>
+                             <a href='index.php?admin&page=addsong' class='btn-primary'>Song hinzufügen</a>");
         break;
     }
 }

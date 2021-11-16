@@ -3,10 +3,10 @@
 use wcf\system\lvc\Main;
 
 class Forwarding {
-    private $http_refere;
-    private $main;
+    private string $http_refere;
+    private Main $main;
     function __construct($wcf_user_id, $type, $data) {
-        $main = new Main();
+        $this->main = new Main();
         if($type === "songadd"){
             if(isset($data["files"]["songdata"])) {
                 $this->addSong($wcf_user_id, $data);

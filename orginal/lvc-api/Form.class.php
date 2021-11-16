@@ -214,10 +214,12 @@ class Form
     }
 
 
-    public function addCalender($id): void
+    public function addCalender($title,$text,$id): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "calender";
+        $this->vars[$this->lastTitle][$this->lastnum]["title"] = $title;
+        $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
         $this->lastnum++;
     }
@@ -273,12 +275,11 @@ class Form
                     $r .= '<button ' . $style . ' ' . $extra . ' onclick="this.style.visibility = \'hidden\';" class="buttonPrimary" accesskey="s" id="' . $id . '" value="' . $var["value2"] . '" name="' . $id . '" data-type="save">' . $var["value1"] . '</button>';
                     continue;
                 }
-
+                $r .= '<dl class="' . $id . 'Input">';
+                $r .= '<dt><label for="' . $id . '">' . $var["title"] . '</label></dt>';
+                $r .= '<dd>';
                 if ($var["art"] === "calender") {
-
-                    $r .= '<input ' . $style . ' ' . $extra . ' id="' . $id . '" class="calendersty" type="datetime-local" value="2018-11-01T10:00"/>';
-                    continue;
-
+                    $r .= '<input ' . $style . ' ' . $extra . ' id="' . $id . '" class="calendersty" type="datetime-local" value="2021-11-01T10:00"/>';
                 }
                 if ($var["art"] === "texttemplate") {
 
@@ -297,9 +298,7 @@ class Form
                 }
 
 
-                $r .= '<dl class="' . $id . 'Input">';
-                $r .= '<dt><label for="' . $id . '">' . $var["title"] . '</label></dt>';
-                $r .= '<dd>';
+
 
                 $required = ($var["require"] ?? false) ? "required" : "";
 
