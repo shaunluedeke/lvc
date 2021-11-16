@@ -16,7 +16,7 @@ class Main{
             $this->sql->query("CREATE TABLE IF NOT EXISTS `history` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Date` VARCHAR(200) NOT NULL , `History` TEXT NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
             $this->sql->query("CREATE TABLE IF NOT EXISTS `songs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , `Comments` TEXT NOT NULL , `Upvotes` INT(16) NOT NULL , `Downvotes` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
             $this->sql->query("CREATE TABLE IF NOT EXISTS `newsongs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-            $this->sql->query("CREATE TABLE IF NOT EXISTS `charts` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `SongIDs` TEXT NOT NULL , `Votes` TEXT NOT NULL , `ENDDate` VARCHAR(200) NOT NULL , `StartDate` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
+            $this->sql->query("CREATE TABLE IF NOT EXISTS `charts` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `SongIDs` TEXT NOT NULL , `Votes` TEXT NOT NULL , `ENDDate` VARCHAR(200) NOT NULL , `StartDate` VARCHAR(200) NOT NULL ,`Active` BOOLEAN NOT NULL, PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
      }
 
 #region History
@@ -226,8 +226,8 @@ class Main{
     public function createCharts(string $startdate, string $enddate, array $songids):int{
         $id = $this->generateCommentID();
         try {
-            $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`)" .
-                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','[]','$enddate','$startdate')");
+            $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`, `Active`)" .
+                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','[]','$enddate','$startdate','false')");
             return $id;
         } catch (\JsonException $e) {
             return -1;
@@ -245,6 +245,7 @@ class Main{
                 try {$a[$row["ID"]]["votes"] = json_decode($row["Votes"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                 $a[$row["ID"]]["enddate"] = $row["ENDDate"];
                 $a[$row["ID"]]["startdate"] = $row["StartDate"];
+                $a[$row["ID"]]["active"] = $row["Active"];
             }
         }else{
             foreach ($result as $row) {
@@ -253,10 +254,18 @@ class Main{
                 try {$a["votes"] = json_decode($row["Votes"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
                 $a["enddate"] = $row["ENDDate"];
                 $a["startdate"] = $row["StartDate"];
+                $a["active"] = $row["Active"];
             }
         }
         return $a;
     }
+
+    public function deleteCharts(int $chartsid):bool{
+        if(!empty($this->getCharts($chartsid))){
+            return $this->sql->query("DELETE FROM `charts` WHERE `ID`='$chartsid'");
+        }return false;
+    }
+    
 
     public function addVote(int $chartsid, int $songid,int $userid,int $amount):bool{
         $infos = $this->getCharts($chartsid);
@@ -271,7 +280,7 @@ class Main{
             }
         }
         $votes[$userid][$songid]=$amount;
-        if($this->getChartsEnd($chartsid)>0) {
+        if($this->getChartsStart($chartsid)<=0&&$this->getChartsEnd($chartsid)>0) {
             try {
                 $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$chartsid'");
                 return true;
@@ -281,8 +290,21 @@ class Main{
         return false;
     }
 
-    public function getChartsEnd($chartsid){
+    public function changeChartsActive($chartsid):bool{
+        if(!empty($this->getCharts($chartsid))){
+            return  $this->sql->query("UPDATE `charts` SET `Active`='" . !(bool)$this->getCharts($chartsid)["active"] . "' WHERE `ID`='$chartsid'");
+        }
+        return false;
+    }
+
+    public function getChartsEnd($chartsid):int{
         $date1 = date_create_from_format('Y-m-d', $this->getCharts($chartsid)["enddate"]);
+        $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
+        return ((array)date_diff($date1, $date2))["days"];
+    }
+
+    public function getChartsStart($chartsid):int{
+        $date1 = date_create_from_format('Y-m-d', $this->getCharts($chartsid)["startdate"]);
         $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
         return ((array)date_diff($date1, $date2))["days"];
     }
