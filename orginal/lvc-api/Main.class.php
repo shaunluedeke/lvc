@@ -265,7 +265,7 @@ class Main{
             return $this->sql->query("DELETE FROM `charts` WHERE `ID`='$chartsid'");
         }return false;
     }
-    
+
 
     public function addVote(int $chartsid, int $songid,int $userid,int $amount):bool{
         $infos = $this->getCharts($chartsid);
@@ -307,6 +307,19 @@ class Main{
         $date1 = date_create_from_format('Y-m-d', $this->getCharts($chartsid)["startdate"]);
         $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
         return ((array)date_diff($date1, $date2))["days"];
+    }
+
+    public function getTopSongsfromCharts($chartsid):array{
+        $ar = array();
+        foreach($this->getCharts($chartsid)["songid"] as $key=>$value){
+            $ar[$value]=0;
+        }
+        $cl = $this->getCharts($chartsid)["votes"];
+        foreach($cl as $key => $value){
+            $num = ($ar[$value]) ?? 0; $num+= $value;
+            $ar[$value]=$value;
+        }
+        return $ar;
     }
 #endregion
 
