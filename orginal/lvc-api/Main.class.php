@@ -85,10 +85,11 @@ class Main{
             return $a;
         }
 
-        public function addSong(string $name,array $info,string $file,bool $active):int{
+        public function addSong(string $name,array $info,string $file):int{
             $id = $this->generateSongID();
+            $file = $id."-".$file;
             $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES".
-                " ('$id','$name','$info','$file','[]','0','0','$active')");
+                " ('$id','$name','$info','$file','[]','0','0','true')");
             return $id;
         }
 
@@ -129,19 +130,19 @@ class Main{
 
     #region SongVote
 
-        public function getVoting(int $id,$downvotes=false):int{
+        public function getSongVoting(int $id,$downvotes=false):int{
             return !$downvotes ? $this->getSong($id)["upvotes"] : $this->getSong($id)["downvotes"];
     }
 
-        public function addVote(int $id,int $amount=1,bool $downvotes=false):void{
-            $sql = !$downvotes?"UPDATE `songs` SET `Upvotes`='".($this->getVoting($id,$downvotes)+$amount)."' WHERE `ID`='$id'"
-                :"UPDATE `songs` SET `Downvotes`='".($this->getVoting($id,$downvotes)+$amount)."' WHERE `ID`='$id'";
+        public function addSongVote(int $id,int $amount=1,bool $downvotes=false):void{
+            $sql = !$downvotes?"UPDATE `songs` SET `Upvotes`='".($this->getSongVoting($id,$downvotes)+$amount)."' WHERE `ID`='$id'"
+                :"UPDATE `songs` SET `Downvotes`='".($this->getSongVoting($id,$downvotes)+$amount)."' WHERE `ID`='$id'";
             $this->sql->query($sql);
         }
 
-        public function removeVote(int $id,int $amount=1,bool $downvotes=false):void{
-            $sql = !$downvotes?"UPDATE `songs` SET `Upvotes`='".($this->getVoting($id,$downvotes)-$amount)."' WHERE `ID`='$id'"
-                :"UPDATE `songs` SET `Downvotes`='".($this->getVoting($id,$downvotes)-$amount)."' WHERE `ID`='$id'";
+        public function removeSongVote(int $id,int $amount=1,bool $downvotes=false):void{
+            $sql = !$downvotes?"UPDATE `songs` SET `Upvotes`='".($this->getSongVoting($id,$downvotes)-$amount)."' WHERE `ID`='$id'"
+                :"UPDATE `songs` SET `Downvotes`='".($this->getSongVoting($id,$downvotes)-$amount)."' WHERE `ID`='$id'";
             $this->sql->query($sql);
         }
 
@@ -222,8 +223,69 @@ class Main{
 
 #region Charts
 
+    public function createCharts(string $startdate, string $enddate, array $songids):int{
+        $id = $this->generateCommentID();
+        try {
+            $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`)" .
+                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','[]','$enddate','$startdate')");
+            return $id;
+        } catch (\JsonException $e) {
+            return -1;
+        }
+    }
 
+    public function getCharts(int $id=0):array{
+        $sql = $id===0 ? "SELECT * FROM `charts`": "SELECT * FROM `charts` WHERE `ID`='$id'";
+        $result = $this->sql->result($sql);
+        $a = array();
+        if($id===0) {
+            foreach ($result as $row) {
+                $a[$row["ID"]]["id"] = $row["ID"];
+                try {$a[$row["ID"]]["songid"] = json_decode($row["SongIDs"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
+                try {$a[$row["ID"]]["votes"] = json_decode($row["Votes"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
+                $a[$row["ID"]]["enddate"] = $row["ENDDate"];
+                $a[$row["ID"]]["startdate"] = $row["StartDate"];
+            }
+        }else{
+            foreach ($result as $row) {
+                $a["id"] = $row["ID"];
+                try {$a["songid"] = json_decode($row["SongIDs"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
+                try {$a["votes"] = json_decode($row["Votes"], true, 512, JSON_THROW_ON_ERROR);} catch (\JsonException $e) {}
+                $a["enddate"] = $row["ENDDate"];
+                $a["startdate"] = $row["StartDate"];
+            }
+        }
+        return $a;
+    }
 
+    public function addVote(int $chartsid, int $songid,int $userid,int $amount):bool{
+        $infos = $this->getCharts($chartsid);
+        $votes = $infos["votes"] ?? array();
+
+        if(array_key_exists($userid,$votes)){
+            if(count($votes[$userid])>2){
+                return false;
+            }
+            if(array_key_exists($songid,$votes[$userid])){
+                return false;
+            }
+        }
+        $votes[$userid][$songid]=$amount;
+        if($this->getChartsEnd($chartsid)>0) {
+            try {
+                $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$chartsid'");
+                return true;
+            } catch (\JsonException $e) {
+            }
+        }
+        return false;
+    }
+
+    public function getChartsEnd($chartsid){
+        $date1 = date_create_from_format('Y-m-d', $this->getCharts($chartsid)["enddate"]);
+        $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
+        return ((array)date_diff($date1, $date2))["days"];
+    }
 #endregion
 
 }
