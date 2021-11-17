@@ -17,7 +17,7 @@ class Main{
             $this->sql->query("CREATE TABLE IF NOT EXISTS `songs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , `Comments` TEXT NOT NULL , `Upvotes` INT(16) NOT NULL , `Downvotes` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
             $this->sql->query("CREATE TABLE IF NOT EXISTS `newsongs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
             $this->sql->query("CREATE TABLE IF NOT EXISTS `charts` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `SongIDs` TEXT NOT NULL , `Votes` TEXT NOT NULL , `ENDDate` VARCHAR(200) NOT NULL , `StartDate` VARCHAR(200) NOT NULL ,`Active` BOOLEAN NOT NULL, PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-     }
+    }
 
 #region History
     public function getHistory($date="all"):array{
@@ -119,6 +119,7 @@ class Main{
             $allcomments[$this->generateCommentID()]=$a;
             try {$this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");} catch (\JsonException $e) {}
         }
+
         public function removeSongComment(int $id,$commentid){
             if(empty($this->getSong($id))){ return false;}
             $allcomments = $this->getSong($id)["comments"];
@@ -164,25 +165,24 @@ class Main{
             }
             return $a;
         }
+
     #endregion
 
     #region GenerateID
-    public function generateSongID():int{
+
+    private function generateSongID():int{
         try {
-            $i = random_int(0, 99999999);
+            $i = random_int(100, 99999999);
             while (($this->sql->count("SELECT * FROM `songs` WHERE `ID`='$i'"))>0){
-                $i= random_int(0, 99999999);
+                $i= random_int(100, 99999999);
             }
             return $i;
-        } catch (\Exception $e) {}
+        }catch (\Exception $e){}
         return $this->generateSongID();
     }
-    public function generateCommentID():int{
-        try {
-            return random_int(0, 999999999999);
-        } catch (\Exception $e) {}
-        return $this->generateSongID();
-    }
+
+    private function generateCommentID():int{try {return random_int(100, 999999999999);}catch(\Exception $e){}return $this->generateSongID();}
+
     #endregion
 
 #endregion
@@ -227,7 +227,7 @@ class Main{
         $id = $this->generateCommentID();
         try {
             $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`, `Active`)" .
-                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','[]','$enddate','$startdate','false')");
+                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','false')");
             return $id;
         } catch (\JsonException $e) {
             return -1;

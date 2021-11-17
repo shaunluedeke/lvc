@@ -16,7 +16,7 @@ switch($page){
 
         switch($returntype){
             case "error":{
-                $returnerror = intval($_GET['error']) ?? 0;
+                $returnerror = (int)($_GET['error'] ?? 0);
                 $form->addTitle("New Song ERROR");
                 switch($returnerror){
                     case 1001:
