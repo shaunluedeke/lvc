@@ -20,6 +20,7 @@ class Main
         $this->sql->query("CREATE TABLE IF NOT EXISTS `newsongs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
         $this->sql->query("CREATE TABLE IF NOT EXISTS `charts` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `SongIDs` TEXT NOT NULL , `Votes` TEXT NOT NULL , `ENDDate` VARCHAR(200) NOT NULL , `StartDate` VARCHAR(200) NOT NULL ,`Active` BOOLEAN NOT NULL, PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
         $this->sql->query("CREATE TABLE IF NOT EXISTS `songlogs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Date` VARCHAR(200) NOT NULL ,`New` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
+        $this->sql->query("CREATE TABLE IF NOT EXISTS `contest` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Name` VARCHAR(200) NOT NULL , `Users` TEXT NOT NULL , `StartingDate` VARCHAR(200) NOT NULL , `EndingDate` VARCHAR(200) NOT NULL , `Activ` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
     }
 
 #region History
@@ -467,22 +468,22 @@ class Main
         return $a;
     }
 
-    public function getAllLog(int $offset, int $limit,int $new = 2): array
+    public function getAllLog(int $offset, int $limit, int $new = 2): array
     {
         $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
         $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $result = $this->sql->result(($new !== 2 ?"SELECT * FROM `songlogs` WHERE `New`='$new' ORDER BY `ID` ASC":"SELECT * FROM `songlogs` ORDER BY `ID` ASC").$limitstring.$offsetstring);
+        $result = $this->sql->result(($new !== 2 ? "SELECT * FROM `songlogs` WHERE `New`='$new' ORDER BY `ID` ASC" : "SELECT * FROM `songlogs` ORDER BY `ID` ASC") . $limitstring . $offsetstring);
         $a = array();
-            foreach ($result as $row) {
-                $a[$row["ID"]]["id"] = $row["ID"];
-                $a[$row["ID"]]["name"] = $row["Songname"];
-                try {
-                    $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
-                } catch (\JsonException $e) {
-                }
-                $a[$row["ID"]]["date"] = (int)($row["Date"]);
-                $a[$row["ID"]]["status"] = (bool)($row["New"]);
+        foreach ($result as $row) {
+            $a[$row["ID"]]["id"] = $row["ID"];
+            $a[$row["ID"]]["name"] = $row["Songname"];
+            try {
+                $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
             }
+            $a[$row["ID"]]["date"] = (int)($row["Date"]);
+            $a[$row["ID"]]["status"] = (bool)($row["New"]);
+        }
         return $a;
     }
 
@@ -509,5 +510,70 @@ class Main
     }
 
 #endregion
+
+#region Contest
+
+    public function getContest(int $id = 0, bool $active = false): array
+    {
+        $ar = array();
+
+        $sql = $id === 0 ? "SELECT * FROM `contest` WHERE `Activ`='$active'" : "SELECT * FROM `contest` WHERE `ID`='$id'";
+        $result = $this->sql->result($sql);
+        try {
+            if ($id === 0) {
+                foreach ($result as $row) {
+                    $ar[$row["ID"]]["id"] = (int)$row["ID"];
+                    $ar[$row["ID"]]["name"] = $row["Name"];
+                    $ar[$row["ID"]]["user"] = json_decode($row["Users"], true, 512, JSON_THROW_ON_ERROR);
+                    $ar[$row["ID"]]["startdate"] = strtotime($row["StartingDate"]);
+                    $ar[$row["ID"]]["enddate"] = strtotime($row["EndingDate"]);
+                    $ar[$row["ID"]]["active"] = (bool)$row["Active"];
+                }
+            } else {
+                foreach ($result as $row) {
+                    $ar["id"] = (int)$row["ID"];
+                    $ar["name"] = $row["Name"];
+                    $ar["user"] = json_decode($row["Users"], true, 512, JSON_THROW_ON_ERROR);
+                    $ar["startdate"] = strtotime($row["StartingDate"]);
+                    $ar["enddate"] = strtotime($row["EndingDate"]);
+                    $ar["active"] = (bool)$row["Active"];
+                }
+            }
+        }catch (\JsonException $e){}
+        return $ar;
+    }
+
+    public function addContest(string $name,$startdate,$enddate):int{
+        try {
+            $i = random_int(1, 9999999);
+            $this->sql->query("INSERT INTO `contest`(`ID`, `Name`, `Users`, `StartingDate`, `EndingDate`, `Activ`)".
+                " VALUES ('$i','$name','". json_encode(array(), JSON_THROW_ON_ERROR) ."','$startdate','$enddate','true')");
+            return $i;
+        } catch (\Exception $e) {
+        }
+        return 0;
+    }
+
+    public function removeContest(int $id):bool{
+        if(empty($this->getContest($id))){return false;}
+        $this->sql->query("DELETE FROM `contest` WHERE `ID`='$id'");
+        return empty($this->getContest($id));
+    }
+
+    public function updateContestStatus(int $id,bool $status=false):bool{
+        return $this->sql->query("UPDATE `contest` SET `Activ`='$status' WHERE `ID`='$id'");
+    }
+
+    public function addContestUser(int $id,$user):bool{
+        if(empty($this->getContest($id))){return false;}
+        $users = $this->getContest($id)["user"];
+        $users[] = $user;
+        try {
+            return $this->sql->query("UPDATE `contest` SET `Users`='". json_encode($users, JSON_THROW_ON_ERROR)."' WHERE `ID`='$id'");
+        }catch (\JsonException $e){}
+        return false;
+    }
+#endregion
+
 
 }

@@ -2,7 +2,6 @@
 
 session_start();
 
-use wcf\system\WCF;
 use wcf\system\lvc\Main;
 use wcf\system\lvc\Form;
 
@@ -12,12 +11,15 @@ $main->init();
 $dellist = $main->getLog();
 $newlist = $main->getLog(true);
 
-$maxsite = ((count($main->getLog()) + count($main->getLog(true))) / 20);
-$page = ($_GET["page"] ?? 1);
-$site = ($page < 1) ? 1 : ($page > $maxsite ? $page : 20);
-
-$offset = (20 * ($site - 1));
-$limit = 20 * ($site);
+$maxsite = (int)((count($main->getLog()) + count($main->getLog(true))) / 20);
+$page = $_GET["page"] ?? 1;
+$site = 1;
+if(is_numeric($page)) {
+    $site = ((int)$page > $maxsite ? $page : 20);
+    $site = ($site < 1) ? 1 : $site;
+}
+$offset = 20 * ($site - 1);
+$limit = 20 * $site;
 $new = $_GET["status"] ?? 2;
 
 
@@ -26,8 +28,8 @@ $html = '
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.css">
     
-    <table id="Table" class="table table-striped table-dark" style="color:white;" data-toggle="table" data-pagination="true"
-           data-search="true">
+    <table id="Table" class="table table-striped table-dark" style="color:white;" data-toggle="table" data-pagination="false"
+           data-search="false">
         <thead>
         <tr>
             <th scope="col" data-sortable="true" data-field="id">ID</th>
@@ -66,5 +68,5 @@ $form->addTitle("Logs");
 $form->addText($html);
 echo($form->show());
 
-$page = new Pagenation($maxsite, $site, "index.php?log&page=");
+$page = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?log&page=");
 echo($page->build());
