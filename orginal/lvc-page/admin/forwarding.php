@@ -37,7 +37,7 @@ class Forwarding
             $info["uploaddate"] = date("d.M.Y");
             $info["author"] = $data["songauthor"];
             $info["infotxt"] = $data["songinfo"];
-            $id = $this->main->addSong($data["songname"], $info, "http://lvcharts.de/songdata/" . $data["files"]["songdata"]["basename"]);
+            $id = $this->main->addSong($data["songname"], $info,  $data["files"]["songdata"]["basename"]);
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdate/" . $id . "-" . $data["files"]["songdata"]["basename"])) {
                 $this->http_refere = "./index.php?admin/&page=addsong&status=success&id=".$id;
             } else {
