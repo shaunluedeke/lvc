@@ -1,10 +1,11 @@
 <?php
 
 namespace wcf\system\lvc;
+use wcf\system\lvc\SQL;
 
 class Main
 {
-    use wcf\system\lvc\SQL;
+
 
     private SQL $sql;
 
@@ -285,7 +286,11 @@ class Main
 
     public function addNewSong(string $name, array $info, string $file): bool
     {
-        return $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$info','$file')");
+        try {
+            $infos = json_encode($info, JSON_THROW_ON_ERROR);
+            return $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$infos','$file')");
+        }catch (\JsonException $e){}
+        return false;
     }
 
     public function removeNewSong(int $id): bool

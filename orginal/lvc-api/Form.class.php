@@ -6,7 +6,7 @@ class Form
     private array $vars = array();
     private string $lastTitle = "";
     private int $lastnum = 0;
-    private string $url = "";
+    private string $url = "index.php?forwarding";
     private string $style = "";
     private string $method = "post";
 
@@ -236,12 +236,10 @@ class Form
         $this->lastnum++;
     }
 
-    public function addSubmit($title,$text, $name, $id): void
+    public function addSubmit($title, $id): void
     {
-
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "submit";
         $this->vars[$this->lastTitle][$this->lastnum]["title"] = $title;
-        $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
         $this->lastnum++;
     }
@@ -272,7 +270,11 @@ class Form
 
                 if ($var["art"] === "button") {
 
-                    $r .= '<button ' . $style . ' ' . $extra . ' onclick="this.style.visibility = \'hidden\';" class="buttonPrimary" accesskey="s" id="' . $id . '" value="' . $var["value2"] . '" name="' . $id . '" data-type="save">' . $var["value1"] . '</button>';
+                    $r .= '<button ' . $style . ' ' . $extra . ' class="buttonPrimary" accesskey="s" id="' . $id . '" value="' . $var["value2"] . '" name="' . $id . '" data-type="save">' . $var["value1"] . '</button>';
+                    continue;
+                }
+                if ($var["art"] === "submit") {
+                    $r .= '<input ' . $style . ' ' . $extra . ' type="submit" id="' . $id . '" name="' . $id . '" placeholder="'.$var["title"].'"  class="medium">';
                     continue;
                 }
                 $r .= '<dl class="' . $id . 'Input">';
@@ -328,9 +330,7 @@ class Form
 
                 } else if ($var["art"] === "textarea") {
                     $r .= '<textarea ' . $style . ' ' . $extra . ' id="' . $id . '" name="' . $id . '" cols="40" rows="5" >' . $var["value"] . '</textarea>';
-                }  else if ($var["art"] === "submit") {
-                    $r .= '<input ' . $style . ' ' . $extra . ' type="submit" id="' . $id . '" name="' . $id . '"  class="medium">';
-                } else if ($var["art"] === "select") {
+                }  else if ($var["art"] === "select") {
                     $r .= '<select ' . $style . ' ' . $extra . ' id="' . $id . '" name="' . $id . '">';
                     $true = true;
                     foreach (($var["option"]) as $k) {

@@ -44,7 +44,7 @@ switch($page){
                 $form->addInput("Song Author","","songauthor","",true);
                 $form->addUpload("Song Datei","New Data","songdata",".mp3 .wav .aac .wma .ogg",true);
                 $form->addTextarea("Song Infos","","songinfo","",true);
-                $form->addButton("Hinzufügen", "button", "songadd");
+                $form->addButton("Hinzufügen", "button", "adminsongadd");
 
                 echo($form->show());
                 break;
