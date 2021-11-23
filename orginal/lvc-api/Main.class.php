@@ -137,10 +137,13 @@ class Main
 
     public function addSong(string $name, array $info, string $file): int
     {
-        $id = $this->generateSongID();
-        $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
-        $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
-            " ('$id','$name','$info','$file','[]','0','0','true')");
+        $id = -1;
+        try {
+            $id = $this->generateSongID();
+            $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
+            $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
+                " ('$id','$name','". json_encode($info, JSON_THROW_ON_ERROR) ."','$file','[]','0','0','true')");
+        }catch (\JsonException $e){}
         return $id;
     }
 

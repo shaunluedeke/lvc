@@ -35,6 +35,7 @@ if ($id !== 0) {
         $form->addTitle("Song: " . $id);
         $form->addText('<h4>Der Song mit der ID gibt es nicht!</h4>');
     }
+    echo($form->show());
 }else{
     $maxsite = (count($main->getSong()) / 20);
     $page = $_GET["page"] ?? 1;
@@ -43,7 +44,7 @@ if ($id !== 0) {
         $site = ((int)$page > $maxsite ? $page : 20);
         $site = ($site < 1) ? 1 : $site;
     }
-
+    $form->addTitle("Song Page: ".$site);
     $offset = (20 * ($site - 1));
     $limit = 20 * ($site);
     $html = '
@@ -81,6 +82,10 @@ if ($id !== 0) {
         </tbody>
     </table>
     ';
+    
+    $form->addText($html);
+    echo($form->show());
+    $page = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?top&page=");
+    echo($page->build());
 }
 
-echo($form->show());

@@ -16,7 +16,7 @@ class Forwarding{
             ($data["files"]["songdata"]["type"] === "audio/mp3") ||
             ($data["files"]["songdata"]["type"] === "audio/wma") ||
             ($data["files"]["songdata"]["type"] === "audio/aac") ||
-            ($data["files"]["songdata"]["type"] === "audio/ogg")||
+            ($data["files"]["songdata"]["type"] === "audio/ogg") ||
             ($data["files"]["songdata"]["type"] === "audio/mpeg")) {
             echo("1");
             if (!is_dir("/var/www/html/songdate") && !mkdir("/var/www/html/songdate/new", 0777, TRUE) && !is_dir("/var/www/html/songdate/new")) {
@@ -49,21 +49,19 @@ class Forwarding{
             ($data["files"]["songdata"]["type"] === "audio/mp3") ||
             ($data["files"]["songdata"]["type"] === "audio/wma") ||
             ($data["files"]["songdata"]["type"] === "audio/aac") ||
-            ($data["files"]["songdata"]["type"] === "audio/ogg")) {
-            if (!is_dir("/var/www/html/songdate") && !mkdir("/var/www/html/songdate", 0777, TRUE) && !is_dir("/var/www/html/songdate")) {
-                throw new \RuntimeException(sprintf('Directory "%s" was not created', "/var/www/html/songdate"));
-            }
+            ($data["files"]["songdata"]["type"] === "audio/ogg") ||
+            ($data["files"]["songdata"]["type"] === "audio/mpeg")) {
             $info = array();
             $info["uploaddate"] = date("d.M.Y");
             $info["author"] = $data["songauthor"];
             $info["infotxt"] = $data["songinfo"];
-            $id = $this->main->addSong($data["songname"], $info, $data["files"]["songdata"]["basename"]);
-            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdate/" . $id . "-" . $data["files"]["songdata"]["basename"])) {
+            $id = $this->main->addSong($data["songname"], $info, $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension']);
+            if($id < 0){ return "./index.php?admin/&page=addsong&status=error&error=1003"; }
+            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdate/" . $id . "-" .
+                $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension'])) {
                 return "./index.php?admin/&page=addsong&status=success&id=" . $id;
             }
             return "./index.php?admin/&page=addsong&status=error&error=1002";
-
-
         }
         return "./index.php?admin/&page=addsong&status=error&error=1001";
 
