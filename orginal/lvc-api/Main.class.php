@@ -112,9 +112,11 @@ class Main
         return $a;
     }
 
-    public function getAllSong(int $offset, int $limit): array
+    public function getAllSong(int $offset=-1, int $limit=-1): array
     {
-        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC");
+        $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
+        $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
+        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC".$limitstring.$offsetstring);
         $a = array();
         foreach ($result as $row) {
             $a[$row["ID"]]["id"] = $row["ID"];
@@ -142,7 +144,7 @@ class Main
             $id = $this->generateSongID();
             $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
             $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
-                " ('$id','$name','". json_encode($info, JSON_THROW_ON_ERROR) ."','$file','[]','0','0','true')");
+                " ('$id','$name','". json_encode($info, JSON_THROW_ON_ERROR) ."','$file','". json_encode(array(), JSON_THROW_ON_ERROR) ."','0','0','1')");
         }catch (\JsonException $e){}
         return $id;
     }
@@ -179,7 +181,7 @@ class Main
         $a = array();
         $a["name"] = $name;
         $a["comment"] = $comment;
-        $a["time"] = date("H:M um d.m.Y");
+        $a["time"] = date("H:i d.m.Y");
         $allcomments[$this->generateCommentID()] = $a;
         try {
             $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");

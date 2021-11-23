@@ -59,6 +59,7 @@ class Forwarding{
             if($id < 0){ return "./index.php?admin/&page=addsong&status=error&error=1003"; }
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdate/" . $id . "-" .
                 $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension'])) {
+                echo("3<br>");
                 return "./index.php?admin/&page=addsong&status=success&id=" . $id;
             }
             return "./index.php?admin/&page=addsong&status=error&error=1002";

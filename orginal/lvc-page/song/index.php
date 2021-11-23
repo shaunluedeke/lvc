@@ -3,17 +3,17 @@
 use wcf\system\lvc\Main;
 use wcf\system\lvc\Form;
 
-$form = new Form();
+
 $main = new Main();
 
-$id = ($_GET['id']) ?? 0;
-$id = is_int($id) ? (int)($id) : 0;
+$id = isset($_GET['id']) ?((int)$_GET['id'] ?? 0):0;
+$form = new Form();
 if ($id !== 0) {
     $info = $main->getSong($id);
     if (!empty($info)) {
         $form->addTitle("Song: " . $info["name"]);
         $form->addText(
-            '<audio src="' . $info["file"] . '"></audio><br>
+            '<audio src="' . $info["file"] . '">$info["name"]</audio><br>
                    <p>Infos:</p><br><br>
                    <ul>
                       <li>Author: ' . $info["info"]["author"] . '</li>
@@ -22,22 +22,28 @@ if ($id !== 0) {
                    </ul><br>
                    <p>Upvotes: ' . $info["upvotes"] . '</p><br>
                    <p>Downvotes: ' . $info["downvotes"] . '</p><br>');
+        echo($form->show());
         foreach ($info["comments"] as $key => $value) {
-
+            $form = new Form();
             $form->addText('<h5>' . $value["name"] . '</h5>
-                            <h6>' . $value["comment"] . '</h6>
-                            <h6>Von:' . $value["time"] . '</h6>');
-            $form->addInput("New Comment", "", "newcomment", "", true);
-            $form->addHidden("songid", $id);
-            $form->addButton("Hinzufügen", "button", "addcomment");
+                            <h6>   ' . $value["comment"] . '</h6>
+                            <h6>Vom: ' . $value["time"] . '</h6>');
+            echo($form->show());
+
         }
+        $form = new Form();
+        $form->addInput("New Comment", "", "newcomment", "", true);
+        $form->addHidden("songid", $id);
+        $form->addButton("Hinzufügen", "button", "addcomment");
+        echo($form->show());
     }else{
         $form->addTitle("Song: " . $id);
         $form->addText('<h4>Der Song mit der ID gibt es nicht!</h4>');
+        echo($form->show());
     }
-    echo($form->show());
+
 }else{
-    $maxsite = (count($main->getSong()) / 20);
+    $maxsite = (count($main->getAllSong()) / 20);
     $page = $_GET["page"] ?? 1;
     $site = 1;
     if (is_numeric($page)) {
@@ -48,7 +54,6 @@ if ($id !== 0) {
     $offset = (20 * ($site - 1));
     $limit = 20 * ($site);
     $html = '
-   
     <table id="Table" class="table table-striped" data-toggle="table" data-pagination="false"
            data-search="false">
         <thead>
@@ -69,23 +74,18 @@ if ($id !== 0) {
                          <th scope="row">'.$value["id"].'</th>
                          <td>'.$value["name"].'</td>
                          <td>'.$value["info"]["author"].'</td>
-                         <td>'.$value["info"]["date"].'</td>
+                         <td>'.$value["info"]["uploaddate"].'</td>
                          <td><a href="index.php?song/&id='.$value["id"].'">Anhören</a></td>
                     </tr>';
     }
 
-    $html.='    
-        <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-        <script src="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script>
+    $html.='  
         </tbody>
     </table>
     ';
-    
+
     $form->addText($html);
     echo($form->show());
-    $page = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?top&page=");
-    echo($page->build());
+    $pagesel = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?song&page=");
+    echo($pagesel->build());
 }
-
