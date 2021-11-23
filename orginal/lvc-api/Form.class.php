@@ -257,7 +257,7 @@ class Form
             }
             foreach ($value as $var) {
 
-                $id = $var["id"];
+                $id = $var["id"]??"";
                 $style = "";
                 $extra = "";
                 if (isset($var["style"])) {
@@ -277,9 +277,11 @@ class Form
                     $r .= '<input ' . $style . ' ' . $extra . ' type="submit" id="' . $id . '" name="' . $id . '" placeholder="'.$var["title"].'"  class="medium">';
                     continue;
                 }
-                $r .= '<dl class="' . $id . 'Input">';
-                $r .= '<dt><label for="' . $id . '">' . $var["title"] . '</label></dt>';
-                $r .= '<dd>';
+                if(isset($var["title"])) {
+                    $r .= '<dl class="' . $id . 'Input">';
+                    $r .= '<dt><label for="' . $id . '">' . $var["title"] . '</label></dt>';
+                    $r .= '<dd>';
+                }
                 if ($var["art"] === "calender") {
                     $r .= '<input ' . $style . ' ' . $extra . ' id="' . $id . '" class="calendersty" type="datetime-local" value="2021-11-01T10:00"/>';
                 }
@@ -388,22 +390,17 @@ class Form
                     }
                 }
 
-
-                $r .= '<small>' . $var["text"] . '</small>';
-                $r .= '</dd>';
-                $r .= '</dl>';
+                if(isset($var["title"])) {
+                    $r .= '<small>' . $var["text"] . '</small>';
+                    $r .= '</dd>';
+                    $r .= '</dl>';
+                }
             }
 
             $r .= '</section>';
         }
 
         $r .= '</form>';
-        $r .= '<script type="text/javascript">';
-        $r .= 'function setText(id, text) {';
-        $r .= 'var res = text.replace(new RegExp("<br>", \'g\'), "\n");';
-        $r .= 'document.getElementById(id).value = res;';
-        $r .= '}';
-        $r .= '</script>';
 
         return $r;
     }

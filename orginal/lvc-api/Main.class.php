@@ -1,6 +1,7 @@
 <?php
 
 namespace wcf\system\lvc;
+
 use wcf\system\lvc\SQL;
 
 class Main
@@ -111,6 +112,29 @@ class Main
         return $a;
     }
 
+    public function getAllSong(int $offset, int $limit): array
+    {
+        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC");
+        $a = array();
+        foreach ($result as $row) {
+            $a[$row["ID"]]["id"] = $row["ID"];
+            $a[$row["ID"]]["name"] = $row["Songname"];
+            try {
+                $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+            }
+            $a[$row["ID"]]["file"] = $row["Songfile"];
+            try {
+                $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+            }
+            $a[$row["ID"]]["upvotes"] = (int)($row["Upvotes"]);
+            $a[$row["ID"]]["downvotes"] = (int)$row["Downvotes"];
+            $a[$row["ID"]]["active"] = (bool)$row["Active"];
+        }
+        return $a;
+    }
+
     public function addSong(string $name, array $info, string $file): int
     {
         $id = $this->generateSongID();
@@ -202,7 +226,7 @@ class Main
     {
         $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
         $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $sql = !$downvotes ? "SELECT * FROM `songs` ORDER BY `Upvotes` ASC" . $limitstring . $offsetstring : "SELECT * FROM `songs` ORDER BY `Downvotes` ASC" . $limitstring . $offsetstring;
+        $sql = !$downvotes ? "SELECT * FROM `songs` ORDER BY `Upvotes` DESC" . $limitstring . $offsetstring : "SELECT * FROM `songs` ORDER BY `Downvotes` DESC" . $limitstring . $offsetstring;
         $result = $this->sql->result($sql);
         $a = array();
         foreach ($result as $row) {
@@ -289,7 +313,8 @@ class Main
         try {
             $infos = json_encode($info, JSON_THROW_ON_ERROR);
             return $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$infos','$file')");
-        }catch (\JsonException $e){}
+        } catch (\JsonException $e) {
+        }
         return false;
     }
 
@@ -544,38 +569,48 @@ class Main
                     $ar["active"] = (bool)$row["Active"];
                 }
             }
-        }catch (\JsonException $e){}
+        } catch (\JsonException $e) {
+        }
         return $ar;
     }
 
-    public function addContest(string $name,$startdate,$enddate):int{
+    public function addContest(string $name, $startdate, $enddate): int
+    {
         try {
             $i = random_int(1, 9999999);
-            $this->sql->query("INSERT INTO `contest`(`ID`, `Name`, `Users`, `StartingDate`, `EndingDate`, `Activ`)".
-                " VALUES ('$i','$name','". json_encode(array(), JSON_THROW_ON_ERROR) ."','$startdate','$enddate','true')");
+            $this->sql->query("INSERT INTO `contest`(`ID`, `Name`, `Users`, `StartingDate`, `EndingDate`, `Activ`)" .
+                " VALUES ('$i','$name','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$startdate','$enddate','true')");
             return $i;
         } catch (\Exception $e) {
         }
         return 0;
     }
 
-    public function removeContest(int $id):bool{
-        if(empty($this->getContest($id))){return false;}
+    public function removeContest(int $id): bool
+    {
+        if (empty($this->getContest($id))) {
+            return false;
+        }
         $this->sql->query("DELETE FROM `contest` WHERE `ID`='$id'");
         return empty($this->getContest($id));
     }
 
-    public function updateContestStatus(int $id,bool $status=false):bool{
+    public function updateContestStatus(int $id, bool $status = false): bool
+    {
         return $this->sql->query("UPDATE `contest` SET `Activ`='$status' WHERE `ID`='$id'");
     }
 
-    public function addContestUser(int $id,$user):bool{
-        if(empty($this->getContest($id))){return false;}
+    public function addContestUser(int $id, $user): bool
+    {
+        if (empty($this->getContest($id))) {
+            return false;
+        }
         $users = $this->getContest($id)["user"];
         $users[] = $user;
         try {
-            return $this->sql->query("UPDATE `contest` SET `Users`='". json_encode($users, JSON_THROW_ON_ERROR)."' WHERE `ID`='$id'");
-        }catch (\JsonException $e){}
+            return $this->sql->query("UPDATE `contest` SET `Users`='" . json_encode($users, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");
+        } catch (\JsonException $e) {
+        }
         return false;
     }
 #endregion

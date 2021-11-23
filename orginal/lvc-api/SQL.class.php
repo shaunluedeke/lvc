@@ -15,8 +15,9 @@ class SQL{
 
     }
     public function result($sql){
-        $state = $this->sql->prepareStatement($sql)->execute();
-        return $state->fetch();
+        $state = $this->sql->prepareStatement($sql);
+        $state->execute();
+        return $state->fetchALL();
     }
     public function count($sql):int{
         return count($this->result($sql));

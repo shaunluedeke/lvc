@@ -22,11 +22,8 @@ $limit = 20 * ($site);
 $form = new Form();
 
 $html = '
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.css">
-    
-    <table id="Table" class="table table-striped table-dark" style="color:white;" data-toggle="table" data-pagination="false"
+
+    <table id="Table" class="table table-striped" data-toggle="table" data-pagination="false"
            data-search="false">
         <thead>
         <tr>
