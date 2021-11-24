@@ -46,13 +46,16 @@ switch ($type) {
 
     case "songadd":
     {
-        echo("0.5");
         $http_refere = $forward->addSong($data);
         break;
     }
     case "addcomment":
     {
         $http_refere = $forward->addComment($data, $wcf_user->username);
+        break;
+    }
+    case "songsearch":{
+        $http_refere = $forward->search($data);
         break;
     }
     case "adminsongadd":

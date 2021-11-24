@@ -13,7 +13,7 @@ if ($id !== 0) {
     if (!empty($info)) {
         $form->addTitle("Song: " . $info["name"]);
         $form->addText(
-            '<audio src="' . $info["file"] . '">$info["name"]</audio><br>
+            '<audio controls><source src="' . $info["file"] . '" ></audio><br>
                    <p>Infos:</p><br><br>
                    <ul>
                       <li>Author: ' . $info["info"]["author"] . '</li>
@@ -43,9 +43,20 @@ if ($id !== 0) {
     }
 
 }else{
+    $pageurl = "index.php?song/";
+    $name = $_GET['name'] ?? "";
+    if($name!==""){$pageurl .="&name=".$name;}
+    $limit = 25;
     $maxsite = (count($main->getAllSong()) / 20);
     $page = $_GET["page"] ?? 1;
     $site = 1;
+
+    if(isset($_GET['limit'])){
+        $limit = (int)$_GET['limit'] < 1 ? 1 : (int)$_GET['limit'];
+        $limit = $limit<=100 ? !($limit<10) ? $limit : 10 : 100;
+        $pageurl .= "&limit=".$limit;
+    }
+
     if (is_numeric($page)) {
         $site = ((int)$page > $maxsite ? $page : 20);
         $site = ($site < 1) ? 1 : $site;
@@ -58,7 +69,6 @@ if ($id !== 0) {
            data-search="false">
         <thead>
         <tr>
-            <th scope="col" data-sortable="true" data-field="id">ID</th>
             <th scope="col" data-sortable="true" data-field="Akte">Name</th>
             <th scope="col" data-sortable="true" data-field="name">Author</th>
             <th scope="col" data-sortable="true" data-field="port">Datum</th>
@@ -68,11 +78,10 @@ if ($id !== 0) {
         <tbody>
             ';
 
-    $a = $main->getAllSong($offset, $limit);
+    $a = $main->getAllSong($offset, $limit,$name);
     foreach($a as $key => $value){
         $html.='<tr>
-                         <th scope="row">'.$value["id"].'</th>
-                         <td>'.$value["name"].'</td>
+                         <th scope="row">'.$value["name"].'</th>
                          <td>'.$value["info"]["author"].'</td>
                          <td>'.$value["info"]["uploaddate"].'</td>
                          <td><a href="index.php?song/&id='.$value["id"].'">Anhören</a></td>

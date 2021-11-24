@@ -147,8 +147,8 @@ switch($page){
 
     default:{
         $form = new Form();
-        $form->addText("<a href='index.php?admin&page=av' class='btn-primary'>Abstimmung verwalten</a>
-                             <a href='index.php?admin&page=addsong' class='btn-primary'>Song hinzufügen</a>");
+        $form->addText("<a href='index.php?admin&page=av' class='btn btn-primary'>Abstimmung verwalten</a>
+                             <a href='index.php?admin&page=addsong' class='btm btn-primary'>Song hinzufügen</a>");
         echo($form->show());
         break;
     }

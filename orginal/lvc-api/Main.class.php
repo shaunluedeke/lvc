@@ -112,11 +112,12 @@ class Main
         return $a;
     }
 
-    public function getAllSong(int $offset=-1, int $limit=-1): array
+    public function getAllSong(int $offset=-1, int $limit=-1,string $name=""): array
     {
+        $namestring = $name === "" ? "" : " AND locate('$name',name)>0 ";
         $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
         $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC".$limitstring.$offsetstring);
+        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC".$limitstring.$offsetstring.$namestring);
         $a = array();
         foreach ($result as $row) {
             $a[$row["ID"]]["id"] = $row["ID"];
@@ -145,6 +146,7 @@ class Main
             $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
             $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
                 " ('$id','$name','". json_encode($info, JSON_THROW_ON_ERROR) ."','$file','". json_encode(array(), JSON_THROW_ON_ERROR) ."','0','0','1')");
+            $this->addLog($id,true);
         }catch (\JsonException $e){}
         return $id;
     }
@@ -485,7 +487,7 @@ class Main
                     $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a[$row["ID"]]["date"] = (int)($row["Date"]);
+                $a[$row["ID"]]["date"] = ($row["Date"]);
                 $a[$row["ID"]]["status"] = (bool)($row["New"]);
             }
         } else {
@@ -496,7 +498,7 @@ class Main
                     $a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a["date"] = (int)($row["Date"]);
+                $a["date"] = ($row["Date"]);
                 $a["status"] = (bool)($row["New"]);
             }
         }
@@ -516,7 +518,7 @@ class Main
                 $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["date"] = (int)($row["Date"]);
+            $a[$row["ID"]]["date"] = ($row["Date"]);
             $a[$row["ID"]]["status"] = (bool)($row["New"]);
         }
         return $a;
@@ -525,14 +527,16 @@ class Main
     public function addLog(int $id, bool $new = false): bool
     {
         $infostring = "";
-        $date = date("Y-m-d\TH:i");
-        $i = $new ? $this->getNewSong($id) : $this->getSong($id);
+        $date = date("d.m.Y");
+        $i = $this->getSong($id);
         $name = $i["name"];
         try {
             $infostring = json_encode($i["info"], JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
         }
-        return $this->sql->query("INSERT INTO `songlogs`(`ID`, `Songname`, `Songinfo`, `Date`, `New`) VALUES ('$id','$name','$infostring','$date','$new')");
+        $newstring = ($new?1:0);
+        $this->sql->query("INSERT INTO `songlogs`(`ID`, `Songname`, `Songinfo`, `Date`, `New`) VALUES ('$id','$name','$infostring','$date','$newstring')");
+        return true;
     }
 
     public function removeLog(int $id): bool

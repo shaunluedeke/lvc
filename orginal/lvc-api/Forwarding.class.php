@@ -19,13 +19,13 @@ class Forwarding{
             ($data["files"]["songdata"]["type"] === "audio/ogg") ||
             ($data["files"]["songdata"]["type"] === "audio/mpeg")) {
             echo("1");
-            if (!is_dir("/var/www/html/songdate") && !mkdir("/var/www/html/songdate/new", 0777, TRUE) && !is_dir("/var/www/html/songdate/new")) {
-                echo sprintf('Directory "%s" was not created', "/var/www/html/songdate");
+            if (!is_dir("/var/www/html/songdate") && !mkdir("/var/www/html/songdata/new", 0777, TRUE) && !is_dir("/var/www/html/songdate/new")) {
+                echo sprintf('Directory "%s" was not created', "/var/www/html/songdata");
             }
             echo("2");
             $newfilename = $data["songauthor"]."-".$data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension'];
             echo($newfilename);
-            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdate/new/" . $newfilename)) {
+            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/new/" . $newfilename)) {
                 echo("3");
                 $info = array();
                 $info["uploaddate"] = date("d.M.Y");
@@ -57,7 +57,7 @@ class Forwarding{
             $info["infotxt"] = $data["songinfo"];
             $id = $this->main->addSong($data["songname"], $info, $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension']);
             if($id < 0){ return "./index.php?admin/&page=addsong&status=error&error=1003"; }
-            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdate/" . $id . "-" .
+            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/" . $id . "-" .
                 $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension'])) {
                 echo("3<br>");
                 return "./index.php?admin/&page=addsong&status=success&id=" . $id;
@@ -80,5 +80,22 @@ class Forwarding{
     public function addComment($data,$username):string{
         $this->main->addSongComment($data["songid"], $username , $data["newcomment"]);
         return "index.php?song/&id" . $data["songid"];
+    }
+
+    public function search($data) {
+        $url="";
+
+        $limit = $data["limit"] ?? 10;
+
+        if((int)$limit!==10){
+            $url = "&limit=".$limit;
+        }
+
+        $name = $data["name"];
+        if($name !== "") {
+            $url .= "&name=".($name);
+        }
+
+        return "./index.php?song/".$url;
     }
 }

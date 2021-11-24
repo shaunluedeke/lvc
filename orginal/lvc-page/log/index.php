@@ -29,7 +29,6 @@ $html = '
            data-search="false">
         <thead>
         <tr>
-            <th scope="col" data-sortable="true" data-field="id">ID</th>
             <th scope="col" data-sortable="true" data-field="Akte">Name</th>
             <th scope="col" data-sortable="true" data-field="name">Author</th>
             <th scope="col" data-sortable="true" data-field="port">Datum</th>
@@ -42,8 +41,7 @@ $html = '
         $a = $main->getAllLog($offset, $limit,$new);
         foreach($a as $key => $value){
             $html.='<tr>
-                         <th scope="row">'.$value["id"].'</th>
-                         <td>'.$value["name"].'</td>
+                         <th scope="row">'.$value["name"].'</th>
                          <td>'.$value["info"]["author"].'</td>
                          <td>'.$value["date"].'</td>
                          <td>'.($value["status"] ? "Neu" : "Gelöscht").'</td>

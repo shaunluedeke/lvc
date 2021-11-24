@@ -27,7 +27,6 @@ $html = '
            data-search="false">
         <thead>
         <tr>
-            <th scope="col" data-sortable="true" data-field="id">ID</th>
             <th scope="col" data-sortable="true" data-field="Akte">Name</th>
             <th scope="col" data-sortable="true" data-field="name">Likes</th>
             <th scope="col" data-sortable="false"></th>
@@ -39,8 +38,7 @@ $a = $main->getTopSongs($limit, $offset);
 foreach ($a as $key => $value) {
     $html .= '
              <tr>
-              <th scope="row">' . $value["id"] . '</th>
-              <td>' . $value["name"] . '</td>
+              <th scope="row">' . $value["name"] . '</th>
               <td>' . $value["upvotes"] . '</td>
               <td><a class="btn btn-primary" href="index.php?song&id=' . $value["id"] . '">Anhören</a></td>
             </tr>
