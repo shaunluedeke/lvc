@@ -88,7 +88,7 @@ if ($id !== 0) {
                     </tr>';
     }
 
-    $html.='  
+    $html.='   
         </tbody>
     </table>
     ';

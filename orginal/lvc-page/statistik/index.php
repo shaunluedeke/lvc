@@ -21,7 +21,7 @@ $limit = 20 * ($site);
 
 $form = new Form();
 
-$html = '
+$html = ' 
 
     <table id="Table" class="table table-striped" data-toggle="table" data-pagination="false"
            data-search="false">
