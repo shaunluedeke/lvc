@@ -36,9 +36,9 @@ if (isset($_POST)) {
 $http_refere = "";
 $id = 0;
 
-if(strpos($type,"av/")){
-    $type = "av";
+if(strpos($type, "av/") === 0){
     $id = ((int)explode("/", $type)[1]);
+    $type = "av";
 }
 
 switch ($type) {

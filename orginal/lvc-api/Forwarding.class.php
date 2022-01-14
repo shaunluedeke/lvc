@@ -122,12 +122,10 @@ class Forwarding
             $charts = $this->main->getChart($id);
             if (count($charts->get()) > 0) {
                 foreach ($data as $key => $value) {
-                    if (strpos($key, "voting/")) {
+                    if (strpos($key, "voting/") === 0) {
                         $songid = (int)explode("/", $key)[1];
-                        if ($songid !== 0) {
-                            if ($charts->addVote($songid, $userid, (int)$value)) {
-                                return "index.php?av&id=$id&status=success";
-                            }
+                        if (($songid !== 0) && ((int)$value !== 0) && $charts->addVote($songid, $userid, (int)$value)) {
+                            return "index.php?av&id=$id&status=success";
                         }
                     }
                 }

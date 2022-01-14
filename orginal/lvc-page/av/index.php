@@ -61,19 +61,15 @@ else {
                 break;
         }
         $form->addTitle("Charts");
-        if($chart->get()["active"]) {
+        if(!$chart->get()["active"]) {
             $form->addText('<div class="alert alert-danger" role="alert">Dieser Chart ist nicht aktiv!</div>');
-        }else
-        if($chart->getStart()> 0){
-            $form->addText('<div class="alert alert-danger" role="alert">Dieser Chart ist noch nicht gestartet!</div>');
-        }else {
-            $form->addText('Die Charts werden nach dem ' . $chart->get()["enddate"] . ' automatisch geschlossen.<br><br>');
+        }else{
+            $form->addText('Die Charts werden nach dem ' . date("d.m.Y",strtotime($chart->get()["enddate"])) . ' um ' . date("H:i:s",strtotime($chart->get()["enddate"])) . ' automatisch geschlossen.<br><br>');
         }
 
         echo($form->show());
 
         $form = new Form();
-        $form->addTitle("Charts");
         $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
            data-search="false">
         <thead>
