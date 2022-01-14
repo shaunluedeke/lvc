@@ -1,6 +1,5 @@
 <?PHP
 
-use wcf\system\WCF;
 use wcf\system\lvc\Forwarding;
 
 $forward = new Forwarding();
@@ -8,13 +7,6 @@ if (!isset($_SERVER['HTTP_REFERER'])) {
     echo "error 1";
     return;
 }
-
-use wcf\data\user\User;
-use wcf\data\user\UserEditor;
-use wcf\data\user\UserAction;
-
-$wcf_user = WCF::getUser();
-$wcf_user_id = $wcf_user->userID;
 
 $HTTP_REFERER = "";
 

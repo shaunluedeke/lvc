@@ -5,10 +5,11 @@ use wcf\system\lvc\Form;
 
 $form = new Form();
 $main = new Main();
+$song = $main->getSong();
 $form->addTitle("Top List");
 $form->addText("Das sind alle Songs in einer Top Liste.");
 $form->show();
-$maxsite = (count($main->getTopSongs()) / 20);
+$maxsite = (count($song->getTopSongs()) / 20);
 $page = $_GET["page"] ?? 1;
 $site = 1;
 if (is_numeric($page)) {
@@ -34,7 +35,7 @@ $html = '
         </thead>
         <tbody>
             ';
-$a = $main->getTopSongs($limit, $offset);
+$a = $song->getTopSongs($limit, $offset);
 foreach ($a as $key => $value) {
     $html .= '
              <tr>

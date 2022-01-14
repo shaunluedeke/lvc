@@ -3,14 +3,24 @@
 use wcf\system\lvc\Main;
 use wcf\system\lvc\Form;
 
-
+use wcf\system\WCF;
+$user = WCF::getUser()->userID!==0;
 $main = new Main();
 
 $id = isset($_GET['id']) ?((int)$_GET['id'] ?? 0):0;
+$songs = $main->getSong($id);
 $form = new Form();
 if ($id !== 0) {
-    $info = $main->getSong($id);
+    $info = $songs->get();
     if (!empty($info)) {
+        $action = $_GET['action'] ?? "";
+        if($action==="upvote" || $action==="downvote"){
+            $songs->addVote( 1,($action==="downvote"));
+            header("Location: index.php?song&id=$id");
+        }
+        $d = $user ?'<p>Upvotes: <a href="index.php?song&id='.$id.'&action=upvote"><ion-icon name="thumbs-up-outline"></ion-icon>' . $info["upvotes"] . '</a></p><br>
+                   <p>Downvotes: <a href="index.php?song&id='.$id.'&action=downvote"><ion-icon name="thumbs-down-outline"></ion-icon>' . $info["downvotes"] . '</a></p><br>' :
+                   '<p>Upvotes: ' . $info["upvotes"] . '</p><br>'.'<p>Downvotes: ' . $info["downvotes"] . '</p><br>';
         $form->addTitle("Song: " . $info["name"]);
         $form->addText(
             '<audio controls><source src="' . $info["file"] . '" ></audio><br>
@@ -20,8 +30,7 @@ if ($id !== 0) {
                       <li>Info Text: ' . $info["info"]["infotxt"] . '</li>
                       <li>Upload date: ' . $info["info"]["uploaddate"] . '</li>
                    </ul><br>
-                   <p>Upvotes: ' . $info["upvotes"] . '</p><br>
-                   <p>Downvotes: ' . $info["downvotes"] . '</p><br>');
+                   '.$d);
         echo($form->show());
         foreach ($info["comments"] as $key => $value) {
             $form = new Form();
@@ -32,22 +41,23 @@ if ($id !== 0) {
 
         }
         $form = new Form();
-        $form->addInput("New Comment", "", "newcomment", "", true);
-        $form->addHidden("songid", $id);
-        $form->addButton("Hinzufügen", "button", "addcomment");
-        echo($form->show());
+        if($user) {
+            $form->addInput("New Comment", "", "newcomment", "", true);
+            $form->addHidden("songid", $id);
+            $form->addButton("Hinzufügen", "button", "addcomment");
+        }
     }else{
         $form->addTitle("Song: " . $id);
         $form->addText('<h4>Der Song mit der ID gibt es nicht!</h4>');
-        echo($form->show());
     }
+    echo($form->show());
 
 }else{
     $pageurl = "index.php?song/";
     $name = $_GET['name'] ?? "";
     if($name!==""){$pageurl .="&name=".$name;}
     $limit = 25;
-    $maxsite = (count($main->getAllSong()) / 20);
+    $maxsite = (count($songs->getAll()) / 20);
     $page = $_GET["page"] ?? 1;
     $site = 1;
 
@@ -78,7 +88,7 @@ if ($id !== 0) {
         <tbody>
             ';
 
-    $a = $main->getAllSong($offset, $limit,$name);
+    $a = $songs->getAll($offset, $limit,$name);
     foreach($a as $key => $value){
         $html.='<tr>
                          <th scope="row">'.$value["name"].'</th>
@@ -95,6 +105,6 @@ if ($id !== 0) {
 
     $form->addText($html);
     echo($form->show());
-    $pagesel = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?song&page=");
-    echo($pagesel->build());
+    //$pagesel = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?song&page=");
+    //echo($pagesel->build());
 }

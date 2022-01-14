@@ -283,7 +283,7 @@ class Form
                     $r .= '<dd>';
                 }
                 if ($var["art"] === "calender") {
-                    $r .= '<input ' . $style . ' ' . $extra . ' id="' . $id . '" class="calendersty" type="datetime-local" value="2021-11-01T10:00"/>';
+                    $r .= '<input ' . $style . ' ' . $extra . ' id="' . $id . '" name="' . $id . '" class="calendersty" type="datetime-local" value="'.date("y-m-d").'"/>';
                 }
                 if ($var["art"] === "texttemplate") {
 

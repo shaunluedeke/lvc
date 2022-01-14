@@ -6,13 +6,41 @@ use wcf\system\lvc\SQL;
 
 class Main
 {
-
-
-    private SQL $sql;
+    public SQL $sql;
 
     public function __construct()
     {
         $this->sql = new SQL();
+    }
+
+    public function getChart(int $id = 0):charts
+    {
+        return new charts($id);
+    }
+
+    public function getContest(int $id = 0):contest
+    {
+        return new contest($id);
+    }
+
+    public function getLogs(int $id = 0):songlogs
+    {
+        return new songlogs($id);
+    }
+
+    public function getNewSong(int $id = 0):newsong
+    {
+        return new newsong($id);
+    }
+
+    public function getSong(int $id = 0):song
+    {
+        return new song($id);
+    }
+
+    public function getHistory(string $date = ""):history
+    {
+        return new history($date);
     }
 
     public function init(): void
@@ -25,14 +53,32 @@ class Main
         $this->sql->query("CREATE TABLE IF NOT EXISTS `contest` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Name` VARCHAR(200) NOT NULL , `Users` TEXT NOT NULL , `StartingDate` VARCHAR(200) NOT NULL , `EndingDate` VARCHAR(200) NOT NULL , `Activ` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
     }
 
-#region History
-    public function getHistory($date = "all"): array
+}
+
+class history
+{
+    private SQL $sql;
+    private string $date;
+
+    public function __construct(string $date = "")
     {
-        $sql = "SELECT `History` FROM `history` WHERE `Date`='$date'";
-        if ($date === "all") {
-            $sql = "SELECT `Date`,`History` FROM `history`";
-        }
-        $result = $this->sql->result($sql);
+        $this->date = $date;
+        $this->sql = new SQL();
+    }
+
+    public function getDate(): string
+    {
+        return $this->date;
+    }
+
+    public function setDate(string $date): void
+    {
+        $this->date = $date;
+    }
+
+    public function get(): array
+    {
+        $result = $this->sql->result(($this->date === "" ? "SELECT `Date`,`History` FROM `history`":"SELECT `History` FROM `history` WHERE `Date`='$this->date'"));
         $a = array();
         foreach (($result) as $row) {
             if (!isset($row["Date"])) {
@@ -49,32 +95,58 @@ class Main
         return $a;
     }
 
-    /** @throws \JsonException */
-    public function addHistory($data, $date = ""): void
+    public function add($data): void
     {
-        $d = $date !== "" ? $date : date("d.m.Y");
-        $a = !is_array($data) ? $data : $this->getHistory($d);
+        $this->date = ($this->date !== "" ? $this->date : date("d.m.Y"));
+        $a = !is_array($data) ? $data : $this->get();
         if (!is_array($data)) {
             $a[] = $data;
         }
-        if (empty($this->getHistory($d))) {
-            $this->sql->query("INSERT INTO `history`(`ID`, `Date`, `History`) VALUES (null,'$d','" . json_encode($a, JSON_THROW_ON_ERROR) . "')");
+        if (empty($this->get())) {
+            try {
+                $this->sql->query("INSERT INTO `history`(`ID`, `Date`, `History`) VALUES (null,'$this->date','" . json_encode($a, JSON_THROW_ON_ERROR) . "')");
+            } catch (\JsonException $e) {
+            }
         } else {
-            $this->sql->query("UPDATE `history` SET `History`='" . json_encode($a, JSON_THROW_ON_ERROR) . "' WHERE `Date`='" . $d . "'");
+            try {
+                $this->sql->query("UPDATE `history` SET `History`='" . json_encode($a, JSON_THROW_ON_ERROR) . "' WHERE `Date`='" . $this->date . "'");
+            } catch (\JsonException $e) {
+            }
         }
     }
 
-#endregion
+}
 
-#region Song
+class song
+{
+    private Main $main;
+    private int $id;
+    private SQL $sql;
+
+    public function __construct(int $id = 0)
+    {
+        $this->main = new Main();
+        $this->id= $id;
+        $this->sql = new SQL();
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
+    }
 
     #region Info
-    public function getSong(int $id = 0): array
+    public function get(): array
     {
-        $sql = $id === 0 ? "SELECT * FROM `songs`" : "SELECT * FROM `songs` WHERE `ID`='$id'";
+        $sql = $this->id === 0 ? "SELECT * FROM `songs`" : "SELECT * FROM `songs` WHERE `ID`='$this->id'";
         $result = $this->sql->result($sql);
         $a = array();
-        if ($id === 0) {
+        if ($this->id === 0) {
             foreach ($result as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
                 $a[$row["ID"]]["name"] = $row["Songname"];
@@ -112,12 +184,12 @@ class Main
         return $a;
     }
 
-    public function getAllSong(int $offset=-1, int $limit=-1,string $name=""): array
+    public function getAll(int $offset = -1, int $limit = -1, string $name = ""): array
     {
         $namestring = $name === "" ? "" : " AND locate('$name',name)>0 ";
         $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
         $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC".$limitstring.$offsetstring.$namestring);
+        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC" . $limitstring . $offsetstring . $namestring);
         $a = array();
         foreach ($result as $row) {
             $a[$row["ID"]]["id"] = $row["ID"];
@@ -138,94 +210,98 @@ class Main
         return $a;
     }
 
-    public function addSong(string $name, array $info, string $file): int
+    public function add(string $name, array $info, string $file): int
     {
         $id = -1;
         try {
             $id = $this->generateSongID();
             $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
             $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
-                " ('$id','$name','". json_encode($info, JSON_THROW_ON_ERROR) ."','$file','". json_encode(array(), JSON_THROW_ON_ERROR) ."','0','0','1')");
-            $this->addLog($id,true);
-        }catch (\JsonException $e){}
+                " ('$id','$name','" . json_encode($info, JSON_THROW_ON_ERROR) . "','$file','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','0','0','1')");
+            $this->main->getLogs($this->id)->add(true);
+        } catch (\JsonException $e) {
+        }
+        $this->id = $id;
         return $id;
     }
 
-    public function removeSong(int $id): bool
+    public function remove(): bool
     {
-        if (empty($this->getSong($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        $this->addLog($id);
-        $this->sql->query("DELETE FROM `songs` WHERE `ID`='$id'");
-        return empty($this->getSong($id));
+        $this->main->getLogs($this->id)->add();
+        $this->sql->query("DELETE FROM `songs` WHERE `ID`='$this->id'");
+        return empty($this->get());
     }
 
-    public function updateActiveSong(int $id, bool $active)
+    public function updateActive(bool $active)
     {
-        if (empty($this->getSong($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        if ($this->getSong($id)["active"] !== $active) {
-            $this->sql->query("UPDATE `songs` SET `Active`='$active' WHERE `ID`='$id'");
+        if ($this->get()["active"] !== $active) {
+            $this->sql->query("UPDATE `songs` SET `Active`='$active' WHERE `ID`='$this->id'");
         }
     }
 
     #endregion
 
     #region Song Comment
-    public function addSongComment(int $id, $name, $comment)
+    public function addComment($name, $comment):bool
     {
-        if (empty($this->getSong($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        $allcomments = $this->getSong($id)["comments"];
+        $allcomments = $this->get()["comments"];
         $a = array();
         $a["name"] = $name;
         $a["comment"] = $comment;
         $a["time"] = date("H:i d.m.Y");
         $allcomments[$this->generateCommentID()] = $a;
         try {
-            $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");
+            return $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
         } catch (\JsonException $e) {
         }
+        return false;
     }
 
-    public function removeSongComment(int $id, $commentid)
+    public function removeComment($commentid):bool
     {
-        if (empty($this->getSong($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        $allcomments = $this->getSong($id)["comments"];
+        $allcomments = $this->get()["comments"];
         if (!array_key_exists($commentid, $allcomments)) {
             return false;
         }
         unset($allcomments[$commentid]);
         try {
-            $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");
+            return $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
         } catch (\JsonException $e) {
         }
+        return false;
     }
     #endregion
 
     #region SongVote
 
-    public function getSongVoting(int $id, $downvotes = false): int
+    public function getVoting($downvotes = false): int
     {
-        return !$downvotes ? $this->getSong($id)["upvotes"] : $this->getSong($id)["downvotes"];
+        return !$downvotes ? $this->get()["upvotes"] : $this->get()["downvotes"];
     }
 
-    public function addSongVote(int $id, int $amount = 1, bool $downvotes = false): void
+    public function addVote(int $amount = 1, bool $downvotes = false): void
     {
-        $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . ($this->getSongVoting($id, $downvotes) + $amount) . "' WHERE `ID`='$id'"
-            : "UPDATE `songs` SET `Downvotes`='" . ($this->getSongVoting($id, $downvotes) + $amount) . "' WHERE `ID`='$id'";
+        $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . ($this->getVoting($downvotes) + $amount) . "' WHERE `ID`='$this->id'"
+            : "UPDATE `songs` SET `Downvotes`='" . ($this->getVoting($downvotes) + $amount) . "' WHERE `ID`='$this->id'";
         $this->sql->query($sql);
     }
 
-    public function removeSongVote(int $id, int $amount = 1, bool $downvotes = false): void
+    public function removeVote(int $amount = 1, bool $downvotes = false): void
     {
-        $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . ($this->getSongVoting($id, $downvotes) - $amount) . "' WHERE `ID`='$id'"
-            : "UPDATE `songs` SET `Downvotes`='" . ($this->getSongVoting($id, $downvotes) - $amount) . "' WHERE `ID`='$id'";
+        $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . ($this->getVoting($downvotes) - $amount) . "' WHERE `ID`='$this->id'"
+            : "UPDATE `songs` SET `Downvotes`='" . ($this->getVoting($downvotes) - $amount) . "' WHERE `ID`='$this->id'";
         $this->sql->query($sql);
     }
 
@@ -274,24 +350,51 @@ class Main
 
     private function generateCommentID(): int
     {
+
         try {
-            return random_int(100, 999999999999);
+            $i = random_int(100, 99999999);
+            while (($this->sql->count("SELECT * FROM `charts` WHERE `ID`='$i'")) > 0) {
+                $i = random_int(100, 99999999);
+            }
+            return $i;
         } catch (\Exception $e) {
         }
-        return $this->generateSongID();
+        return $this->generateCommentID();
     }
 
     #endregion
 
-#endregion
+}
 
-#region NewSong
-    public function getNewSong(int $id = 0): array
+class newsong
+{
+
+    private int $id;
+    private Main $main;
+    public SQL $sql;
+
+    public function __construct(int $id = 0)
     {
-        $sql = $id === 0 ? "SELECT * FROM `newsongs`" : "SELECT * FROM `newsongs` WHERE `ID`='$id'";
-        $result = $this->sql->result($sql);
+        $this->id = $id;
+        $this->main = new Main();
+        $this->sql = $this->main->sql;
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function get(): array
+    {
+        $result = $this->sql->result(($this->id === 0 ? "SELECT * FROM `newsongs`" : "SELECT * FROM `newsongs` WHERE `ID`='$this->id'"));
         $a = array();
-        if ($id === 0) {
+        if ($this->id === 0) {
             foreach (($result) as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
                 $a[$row["ID"]]["name"] = $row["Songname"];
@@ -315,7 +418,7 @@ class Main
         return $a;
     }
 
-    public function addNewSong(string $name, array $info, string $file): bool
+    public function add(string $name, array $info, string $file): bool
     {
         try {
             $infos = json_encode($info, JSON_THROW_ON_ERROR);
@@ -325,50 +428,71 @@ class Main
         return false;
     }
 
-    public function removeNewSong(int $id): bool
+    public function remove(): bool
     {
-        if (empty($this->getNewSong($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        $this->sql->query("DELETE FROM `newsongs` WHERE `ID`='$id'");
-        return empty($this->getNewSong($id));
+        $this->sql->query("DELETE FROM `newsongs` WHERE `ID`='$this->id'");
+        return empty($this->get());
     }
 
-    public function acceptNewSong(int $id): bool
+    public function accept(): bool
     {
-        $info = $this->getNewSong($id);
+        $info = $this->get();
         if (empty($info)) {
             return false;
         }
         $file = pathinfo(file($info["file"]))['filename'];
-        $newid = $this->addSong($info["name"], $info["info"], $file);
+        $newid = $this->main->getSong()->add($info["name"], $info["info"], $file);
         rename("/var/www/html/songdate/new/" . $file, "/var/www/html/songdate/" . $newid . "-" . $file);
-        $this->addLog($id, true);
-        $this->removeNewSong($id);
+        $this->main->getLogs($this->id)->add(true);
+        $this->remove();
         return false;
     }
-#endregion
+}
 
-#region Charts
+class charts
+{
+    private int $id;
+    private Main $main;
+    public SQL $sql;
 
-    public function createCharts(string $startdate, string $enddate, array $songids): int
+    public function __construct(int $id = 0)
+    {
+        $this->id = $id;
+        $this->main = new Main();
+        $this->sql = $this->main->sql;
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function create(string $startdate, string $enddate, array $songids): int
     {
         $id = $this->generateCommentID();
         try {
             $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`, `Active`)" .
-                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','false')");
+                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','0')");
             return $id;
         } catch (\JsonException $e) {
             return -1;
         }
     }
 
-    public function getCharts(int $id = 0): array
+    public function get(): array
     {
-        $sql = $id === 0 ? "SELECT * FROM `charts`" : "SELECT * FROM `charts` WHERE `ID`='$id'";
+        $sql = $this->id === 0 ? "SELECT * FROM `charts`" : "SELECT * FROM `charts` WHERE `ID`='$this->id'";
         $result = $this->sql->result($sql);
         $a = array();
-        if ($id === 0) {
+        if ($this->id === 0) {
             foreach ($result as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
                 try {
@@ -381,7 +505,7 @@ class Main
                 }
                 $a[$row["ID"]]["enddate"] = $row["ENDDate"];
                 $a[$row["ID"]]["startdate"] = $row["StartDate"];
-                $a[$row["ID"]]["active"] = $row["Active"];
+                $a[$row["ID"]]["active"] = (bool)$row["Active"];
             }
         } else {
             foreach ($result as $row) {
@@ -396,24 +520,23 @@ class Main
                 }
                 $a["enddate"] = $row["ENDDate"];
                 $a["startdate"] = $row["StartDate"];
-                $a["active"] = $row["Active"];
+                $a["active"] = (bool)$row["Active"];
             }
         }
         return $a;
     }
 
-    public function deleteCharts(int $chartsid): bool
+    public function deleteCharts(): bool
     {
-        if (!empty($this->getCharts($chartsid))) {
-            return $this->sql->query("DELETE FROM `charts` WHERE `ID`='$chartsid'");
+        if (!empty($this->get())) {
+            return $this->sql->query("DELETE FROM `charts` WHERE `ID`='$this->id'");
         }
         return false;
     }
 
-
-    public function addVote(int $chartsid, int $songid, int $userid, int $amount): bool
+    public function addVote(int $songid, int $userid, int $amount): bool
     {
-        $infos = $this->getCharts($chartsid);
+        $infos = $this->get();
         $votes = $infos["votes"] ?? array();
 
         if (array_key_exists($userid, $votes)) {
@@ -425,9 +548,9 @@ class Main
             }
         }
         $votes[$userid][$songid] = $amount;
-        if ($this->getChartsStart($chartsid) <= 0 && $this->getChartsEnd($chartsid) > 0) {
+        if ($this->getStart() <= 0 && $this->getEnd() > 0) {
             try {
-                $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$chartsid'");
+                $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
                 return true;
             } catch (\JsonException $e) {
             }
@@ -435,35 +558,35 @@ class Main
         return false;
     }
 
-    public function changeChartsActive($chartsid): bool
+    public function changeActive(): bool
     {
-        if (!empty($this->getCharts($chartsid))) {
-            return $this->sql->query("UPDATE `charts` SET `Active`='" . !(bool)$this->getCharts($chartsid)["active"] . "' WHERE `ID`='$chartsid'");
+        if (!empty($this->get())) {
+            return $this->sql->query("UPDATE `charts` SET `Active`='" . !(bool)$this->get()["active"] . "' WHERE `ID`='$this->id'");
         }
         return false;
     }
 
-    public function getChartsEnd($chartsid): int
+    public function getEnd(): int
     {
-        $date1 = date_create_from_format('Y-m-d', $this->getCharts($chartsid)["enddate"]);
+        $date1 = date_create_from_format('Y-m-d', $this->get()["enddate"]);
         $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
         return ((array)date_diff($date1, $date2))["days"];
     }
 
-    public function getChartsStart($chartsid): int
+    public function getStart(): int
     {
-        $date1 = date_create_from_format('Y-m-d', $this->getCharts($chartsid)["startdate"]);
+        $date1 = date_create_from_format('Y-m-d', $this->get()["startdate"]);
         $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
         return ((array)date_diff($date1, $date2))["days"];
     }
 
-    public function getTopSongsfromCharts($chartsid): array
+    public function getTopSongs(): array
     {
         $ar = array();
-        foreach ($this->getCharts($chartsid)["songid"] as $key => $value) {
+        foreach ($this->get()["songid"] as $key => $value) {
             $ar[$value] = 0;
         }
-        $cl = $this->getCharts($chartsid)["votes"];
+        $cl = $this->get()["votes"];
         foreach ($cl as $key => $value) {
             $num = ($ar[$value]) ?? 0;
             $num += $value;
@@ -471,15 +594,36 @@ class Main
         }
         return $ar;
     }
-#endregion
+}
 
-#region SongLogs
+class songlogs
+{
+    private int $id;
+    private Main $main;
+    public SQL $sql;
 
-    public function getLog(bool $new = false, int $id = 0): array
+    public function __construct(int $id = 0)
     {
-        $result = $this->sql->result(($id === 0 ? "SELECT * FROM `songlogs` WHERE `New`='$new'" : "SELECT * FROM `songlogs` WHERE `ID`='$id' AND `New`='$new'"));
+        $this->id = $id;
+        $this->main = new Main();
+        $this->sql = $this->main->sql;
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function get(bool $new = false): array
+    {
+        $result = $this->sql->result(($this->id === 0 ? "SELECT * FROM `songlogs` WHERE `New`='$new'" : "SELECT * FROM `songlogs` WHERE `ID`='$this->id' AND `New`='$new'"));
         $a = array();
-        if ($id === 0) {
+        if ($this->id === 0) {
             foreach ($result as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
                 $a[$row["ID"]]["name"] = $row["Songname"];
@@ -505,7 +649,7 @@ class Main
         return $a;
     }
 
-    public function getAllLog(int $offset, int $limit, int $new = 2): array
+    public function getAll(int $offset, int $limit, int $new = 2): array
     {
         $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
         $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
@@ -524,42 +668,63 @@ class Main
         return $a;
     }
 
-    public function addLog(int $id, bool $new = false): bool
+    public function add(bool $new = false): bool
     {
         $infostring = "";
         $date = date("d.m.Y");
-        $i = $this->getSong($id);
+        $i = $this->main->getSong($this->id)->get();
         $name = $i["name"];
         try {
             $infostring = json_encode($i["info"], JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
         }
-        $newstring = ($new?1:0);
-        $this->sql->query("INSERT INTO `songlogs`(`ID`, `Songname`, `Songinfo`, `Date`, `New`) VALUES ('$id','$name','$infostring','$date','$newstring')");
+        $newstring = ($new ? 1 : 0);
+        $this->sql->query("INSERT INTO `songlogs`(`ID`, `Songname`, `Songinfo`, `Date`, `New`) VALUES ('$this->id','$name','$infostring','$date','$newstring')");
         return true;
     }
 
-    public function removeLog(int $id): bool
+    public function remove(): bool
     {
-        if (empty($this->getSong($id))) {
+        if (empty($this->main->getSong($this->id)->get())) {
             return false;
         }
-        $this->sql->query("DELETE FROM `songlogs` WHERE `ID`='$id'");
-        return empty($this->getSong($id));
+        $this->sql->query("DELETE FROM `songlogs` WHERE `ID`='$this->id'");
+        return empty($this->main->getSong($this->id)->get());
     }
 
-#endregion
+}
 
-#region Contest
+class contest
+{
+    private int $id;
+    private Main $main;
+    public SQL $sql;
 
-    public function getContest(int $id = 0, bool $active = false): array
+    public function __construct(int $id = 0)
+    {
+        $this->id = $id;
+        $this->main = new Main();
+        $this->sql = $this->main->sql;
+    }
+
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function get(bool $active = false): array
     {
         $ar = array();
 
-        $sql = $id === 0 ? "SELECT * FROM `contest` WHERE `Activ`='$active'" : "SELECT * FROM `contest` WHERE `ID`='$id'";
+        $sql = $this->id === 0 ? "SELECT * FROM `contest` WHERE `Activ`='$active'" : "SELECT * FROM `contest` WHERE `ID`='$this->id'";
         $result = $this->sql->result($sql);
         try {
-            if ($id === 0) {
+            if ($this->id === 0) {
                 foreach ($result as $row) {
                     $ar[$row["ID"]]["id"] = (int)$row["ID"];
                     $ar[$row["ID"]]["name"] = $row["Name"];
@@ -583,7 +748,7 @@ class Main
         return $ar;
     }
 
-    public function addContest(string $name, $startdate, $enddate): int
+    public function add(string $name, $startdate, $enddate): int
     {
         try {
             $i = random_int(1, 9999999);
@@ -595,34 +760,32 @@ class Main
         return 0;
     }
 
-    public function removeContest(int $id): bool
+    public function remove(): bool
     {
-        if (empty($this->getContest($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        $this->sql->query("DELETE FROM `contest` WHERE `ID`='$id'");
-        return empty($this->getContest($id));
+        $this->sql->query("DELETE FROM `contest` WHERE `ID`='$this->id'");
+        return empty($this->get());
     }
 
-    public function updateContestStatus(int $id, bool $status = false): bool
+    public function updateStatus(bool $status = false): bool
     {
-        return $this->sql->query("UPDATE `contest` SET `Activ`='$status' WHERE `ID`='$id'");
+        return $this->sql->query("UPDATE `contest` SET `Activ`='$status' WHERE `ID`='$this->id'");
     }
 
-    public function addContestUser(int $id, $user): bool
+    public function addUser($user): bool
     {
-        if (empty($this->getContest($id))) {
+        if (empty($this->get())) {
             return false;
         }
-        $users = $this->getContest($id)["user"];
+        $users = $this->get()["user"];
         $users[] = $user;
         try {
-            return $this->sql->query("UPDATE `contest` SET `Users`='" . json_encode($users, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$id'");
+            return $this->sql->query("UPDATE `contest` SET `Users`='" . json_encode($users, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
         } catch (\JsonException $e) {
         }
         return false;
     }
-#endregion
-
-
 }
+

@@ -7,11 +7,11 @@ use wcf\system\lvc\Form;
 
 $main = new Main();
 $main->init();
+$log = $main->getLogs();
+$dellist = $log->get();
+$newlist = $log->get(true);
 
-$dellist = $main->getLog();
-$newlist = $main->getLog(true);
-
-$maxsite = (int)((count($main->getLog()) + count($main->getLog(true))) / 20);
+$maxsite = (int)((count($log->get()) + count($log->get(true))) / 20);
 $page = $_GET["page"] ?? 1;
 $site = 1;
 if(is_numeric($page)) {
@@ -38,7 +38,7 @@ $html = '
         <tbody>
             ';
 
-        $a = $main->getAllLog($offset, $limit,$new);
+        $a = $log->getAll($offset, $limit,$new);
         foreach($a as $key => $value){
             $html.='<tr>
                          <th scope="row">'.$value["name"].'</th>

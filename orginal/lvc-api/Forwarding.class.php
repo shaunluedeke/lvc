@@ -32,7 +32,7 @@ class Forwarding{
                 $info["author"] = $data["songauthor"];
                 $info["infotxt"] = $data["songinfo"];
 
-                if ($this->main->addNewSong($data["songname"], $info, "http://lvcharts.de/songdata/new/" . $newfilename)) {
+                if ($this->main->getNewSong()->add($data["songname"], $info, "http://lvcharts.de/songdata/new/" . $newfilename)) {
                     echo("4");
                     return "./index.php?song-add/&status=success";
                 }
@@ -45,6 +45,7 @@ class Forwarding{
 
     public function addAdminSong($data):string
     {
+        echo($data["files"]["songdata"]["type"]);
         if (($data["files"]["songdata"]["type"] === "audio/wav") ||
             ($data["files"]["songdata"]["type"] === "audio/mp3") ||
             ($data["files"]["songdata"]["type"] === "audio/wma") ||
@@ -55,7 +56,7 @@ class Forwarding{
             $info["uploaddate"] = date("d.M.Y");
             $info["author"] = $data["songauthor"];
             $info["infotxt"] = $data["songinfo"];
-            $id = $this->main->addSong($data["songname"], $info, $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension']);
+            $id = $this->main->getSong()->add($data["songname"], $info, $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension']);
             if($id < 0){ return "./index.php?admin/&page=addsong&status=error&error=1003"; }
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/" . $id . "-" .
                 $data["songname"].".". pathinfo($data["files"]["songdata"]['name'])['extension'])) {
@@ -70,7 +71,15 @@ class Forwarding{
 
     public function addAV($data):string
     {
-        $i = $this->main->createCharts($data["startdate"],$data["enddate"],$data["songid"]);
+        $a = array();
+        if(count(explode(",",$data["songids"]))>1){
+            foreach(explode(",",$data["songids"]) as $id){
+                $a[] = (int)$id;
+            }
+        }else{
+            $a[] = (int)$data["songids"];
+        }
+        $i = $this->main->getChart()->create($data["startdate"],$data["enddate"],$a);
         if($i!==-1){
             return "index.php?admin&page=av&id=$i";
         }
@@ -78,11 +87,11 @@ class Forwarding{
     }
 
     public function addComment($data,$username):string{
-        $this->main->addSongComment($data["songid"], $username , $data["newcomment"]);
-        return "index.php?song/&id" . $data["songid"];
+        $this->main->getSong((int)$data["songid"])->addComment($username , $data["newcomment"]);
+        return "index.php?song/&id=" . $data["songid"];
     }
 
-    public function search($data) {
+    public function search($data):string {
         $url="";
 
         $limit = $data["limit"] ?? 10;
