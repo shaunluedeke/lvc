@@ -7,7 +7,7 @@ class SQL{
 
     private $sql;
 
-    function __construct(){$this->sql = WCF::getDB(); }
+    public function __construct(){$this->sql = WCF::getDB(); }
 
     public function query($sql){
         $state = $this->sql->prepareStatement($sql);

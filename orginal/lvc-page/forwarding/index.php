@@ -34,6 +34,12 @@ if (isset($_POST)) {
 }
 
 $http_refere = "";
+$id = 0;
+
+if(strpos($type,"av/")){
+    $type = "av";
+    $id = ((int)explode("/", $type)[1]);
+}
 
 switch ($type) {
 
@@ -62,14 +68,19 @@ switch ($type) {
         break;
     }
 
+    case "av":{
+        $http_refere = $forward->setAV($id,$user->userID,$data);
+        break;
+    }
+
 }
-$debug = true;
+$debug = false;
 
 if($debug){
     echo("<pre>");
-    print_r($data);
+    print_r($data,false);
     echo("</pre><br>Return value: ".$http_refere);
-    echo($type);
+    echo("<br>".$type);
     return;
 }
 

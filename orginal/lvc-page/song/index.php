@@ -7,8 +7,8 @@ use wcf\system\WCF;
 $user = WCF::getUser()->userID!==0;
 $main = new Main();
 
-$id = isset($_GET['id']) ?((int)$_GET['id'] ?? 0):0;
-$songs = $main->getSong($id);
+$id = $_GET['id'] ?? 0;
+$songs = $main->getSong((int)$id);
 $form = new Form();
 if ($id !== 0) {
     $info = $songs->get();

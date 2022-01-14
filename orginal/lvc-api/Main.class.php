@@ -479,7 +479,7 @@ class charts
 
     public function create(string $startdate, string $enddate, array $songids): int
     {
-        $id = $this->generateCommentID();
+        $id = random_int(0, 99999999);
         try {
             $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`, `Active`)" .
                 " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','0')");
@@ -542,7 +542,7 @@ class charts
         $votes = $infos["votes"] ?? array();
 
         if (array_key_exists($userid, $votes)) {
-            if (count($votes[$userid]) > 2) {
+            if (count($votes[$userid]) > 3) {
                 return false;
             }
             if (array_key_exists($songid, $votes[$userid])) {
@@ -556,6 +556,16 @@ class charts
                 return true;
             } catch (\JsonException $e) {
             }
+        }
+        return false;
+    }
+
+    public function hasVoted(int $userid): bool
+    {
+        $infos = $this->get();
+        $votes = $infos["votes"] ?? array();
+        if (array_key_exists($userid, $votes)) {
+            return count($votes[$userid]) > 3;
         }
         return false;
     }
