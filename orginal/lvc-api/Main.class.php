@@ -260,7 +260,8 @@ class song
         $a["time"] = date("H:i d.m.Y");
         $allcomments[$this->generateCommentID()] = $a;
         try {
-            return $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            return true;
         } catch (\JsonException $e) {
         }
         return false;
@@ -277,7 +278,8 @@ class song
         }
         unset($allcomments[$commentid]);
         try {
-            return $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            return true;
         } catch (\JsonException $e) {
         }
         return false;

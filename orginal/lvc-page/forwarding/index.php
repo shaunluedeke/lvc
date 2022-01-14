@@ -7,7 +7,8 @@ if (!isset($_SERVER['HTTP_REFERER'])) {
     echo "error 1";
     return;
 }
-
+use wcf\system\WCF;
+$user = WCF::getUser();
 $HTTP_REFERER = "";
 
 $type = "";
@@ -43,7 +44,7 @@ switch ($type) {
     }
     case "addcomment":
     {
-        $http_refere = $forward->addComment($data, $wcf_user->username);
+        $http_refere = $forward->addComment($data, $user->username);
         break;
     }
     case "songsearch":{
