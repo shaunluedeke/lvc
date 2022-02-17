@@ -90,12 +90,14 @@ if ($id !== 0) {
 
     $a = $songs->getAll($offset, $limit,$name);
     foreach($a as $key => $value){
-        $html.='<tr>
-                         <th scope="row">'.$value["name"].'</th>
-                         <td>'.$value["info"]["author"].'</td>
-                         <td>'.$value["info"]["uploaddate"].'</td>
-                         <td><a href="index.php?song/&id='.$value["id"].'">Anhören</a></td>
+        if($value["active"]===true) {
+            $html .= '<tr>
+                         <th scope="row">' . $value["name"] . '</th>
+                         <td>' . $value["info"]["author"] . '</td>
+                         <td>' . $value["info"]["uploaddate"] . '</td>
+                         <td><a href="index.php?song/&id=' . $value["id"] . '">Anhören</a></td>
                     </tr>';
+        }
     }
 
     $html.='   

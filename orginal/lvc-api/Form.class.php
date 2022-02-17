@@ -131,7 +131,7 @@ class Form
         $this->lastnum++;
     }
 
-    public function addNumber($title, $text, $id, $value = 0, $step = 1, $min = 0, $max = 10000,bool $require=false): void
+    public function addNumber($title, $text, $id, $value = 0, $step = 1, $min = 0, $max = 10000000,bool $require=false,bool $readonly =false): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "number";
@@ -143,6 +143,7 @@ class Form
         $this->vars[$this->lastTitle][$this->lastnum]["max"] = $max;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
         $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
+        $this->vars[$this->lastTitle][$this->lastnum]["readonly"] = $readonly;
         $this->lastnum++;
     }
 
@@ -305,6 +306,7 @@ class Form
 
 
                 $required = ($var["require"] ?? false) ? "required" : "";
+                $readonly = ($var["readonly"] ?? false) ? "readonly" : "";
 
                 if ($var["art"] === "input") {
 
@@ -315,7 +317,7 @@ class Form
                     $type = ($var["type"] !== "*") ? 'accept="'.$var["type"].'"' : "";
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$type.' '.$required.' style="border: 2px dashed #e0e4e8;padding: 30px;padding-left: 200px;padding-right: 200px;" type="file" name="' . $id . '"  id="' . $id . '" accept="image/png">';
                 } else if ($var["art"] === "number") {
-                    $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="number" id="' . $id . '" name="' . $id . '" min="' . $var["min"] . '" max="' . $var["max"] . '" step="' . $var["step"] . '" value="' . $var["value"] . '" class="medium">';
+                    $r .= '<input ' . $style . ' ' . $extra . ' '.$readonly. ' '.$required.' type="number" id="' . $id . '" name="' . $id . '" min="' . $var["min"] . '" max="' . $var["max"] . '" step="' . $var["step"] . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "rage") {
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="range" id="' . $id . '" name="' . $id . '" min="' . $var["min"] . '" max="' . $var["max"] . '" step="' . $var["step"] . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "list") {

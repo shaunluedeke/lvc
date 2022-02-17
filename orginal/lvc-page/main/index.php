@@ -24,7 +24,7 @@ echo($form->show());
 $form = new Form();
 
 //charts abfrage
-$charts = $main->getChart()->get();
+$charts = $main->getChart()->get(true);
 $chartsset = false;
 if(count($charts)> 0) {
 

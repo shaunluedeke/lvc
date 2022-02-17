@@ -230,7 +230,6 @@ class song
             $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
             $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
                 " ('$id','$name','" . json_encode($info, JSON_THROW_ON_ERROR) . "','$file','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','0','0','1')");
-            $this->main->getLogs($this->id)->add(true);
         } catch (\JsonException $e) {
         }
         $this->id = $id;
@@ -255,6 +254,19 @@ class song
         if ($this->get()["active"] !== $active) {
             $this->sql->query("UPDATE `songs` SET `Active`='$active' WHERE `ID`='$this->id'");
         }
+    }
+
+    public function edit(string $name, array $info, bool $active):void{
+        if (empty($this->get())) {
+            return;
+        }
+        $as = $active ? 1:0;
+        $infostring = "";
+        try {
+            $infostring = json_encode($info, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+        }
+        $this->sql->query("UPDATE `songs` SET `Songname`='$name',`Songinfo`='$infostring',`Active`='$as' WHERE `ID`='$this->id'");
     }
 
     #endregion
@@ -501,9 +513,11 @@ class charts
         }
     }
 
-    public function get(): array
+    public function get(bool $onlyactive=false): array
     {
-        $sql = $this->id === 0 ? "SELECT * FROM `charts`" : "SELECT * FROM `charts` WHERE `ID`='$this->id'";
+        $activ = $onlyactive ? " WHERE `Active`='1'" : "";
+        $activ1 = $onlyactive ? " AND `Active`='1'" : "";
+        $sql = $this->id === 0 ? "SELECT * FROM `charts`".$activ : "SELECT * FROM `charts` WHERE `ID`='$this->id'".$activ1;
         $result = $this->sql->result($sql);
         $a = array();
         if ($this->id === 0) {
@@ -585,7 +599,8 @@ class charts
     public function changeActive(): bool
     {
         if (!empty($this->get())) {
-            return $this->sql->query("UPDATE `charts` SET `Active`='" . !(bool)$this->get()["active"] . "' WHERE `ID`='$this->id'");
+             $this->sql->query("UPDATE `charts` SET `Active`='" . (!(bool)$this->get()["active"]? 1:0) . "' WHERE `ID`='$this->id'");
+             return true;
         }
         return false;
     }
@@ -607,14 +622,26 @@ class charts
     public function getTopSongs(): array
     {
         $ar = array();
-        foreach ($this->get()["songid"] as $key => $value) {
-            $ar[$value] = 0;
-        }
-        $cl = $this->get()["votes"];
-        foreach ($cl as $key => $value) {
-            $num = ($ar[$value]) ?? 0;
-            $num += $value;
-            $ar[$value] = $value;
+        if($this->id === 0) {
+            $cl = $this->get();
+            foreach ($cl as $c => $cv) {
+                foreach ($cl["votes"] as $key => $value) {
+                    foreach ($value as $key2 => $value2) {
+                        $num = ($ar[$cv["id"]][$key2]) ?? 0;
+                        $num += $value2;
+                        $ar[$cv["id"]][$key2] = $num;
+                    }
+                }
+            }
+        }else{
+            $cl = $this->get()["votes"];
+            foreach ($cl as $key => $value) {
+                foreach ($value as $key2 => $value2) {
+                    $num = ($ar[$key2]) ?? 0;
+                    $num += $value2;
+                    $ar[$key2] = $num;
+                }
+            }
         }
         return $ar;
     }

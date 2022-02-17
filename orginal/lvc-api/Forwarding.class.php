@@ -32,7 +32,7 @@ class Forwarding
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/new/" . $newfilename)) {
                 echo("3");
                 $info = array();
-                $info["uploaddate"] = date("d.M.Y");
+                $info["uploaddate"] = date("d.m.Y");
                 $info["author"] = $data["songauthor"];
                 $info["infotxt"] = $data["songinfo"];
 
@@ -49,18 +49,13 @@ class Forwarding
 
     public function addAdminSong($data): string
     {
-        echo($data["files"]["songdata"]["type"]);
-        if (($data["files"]["songdata"]["type"] === "audio/wav") ||
-            ($data["files"]["songdata"]["type"] === "audio/mp3") ||
-            ($data["files"]["songdata"]["type"] === "audio/wma") ||
-            ($data["files"]["songdata"]["type"] === "audio/aac") ||
-            ($data["files"]["songdata"]["type"] === "audio/ogg") ||
-            ($data["files"]["songdata"]["type"] === "audio/mpeg")) {
+        if ($this->check_file_is_audio(pathinfo($data["files"]["songdata"]['name'])['extension'])) {
             $info = array();
             $info["uploaddate"] = date("d.M.Y");
             $info["author"] = $data["songauthor"];
             $info["infotxt"] = $data["songinfo"];
             $id = $this->main->getSong()->add($data["songname"], $info, $data["songname"] . "." . pathinfo($data["files"]["songdata"]['name'])['extension']);
+            echo("2<br>");
             if ($id < 0) {
                 return "./index.php?admin/&page=addsong&status=error&error=1003";
             }
@@ -132,5 +127,27 @@ class Forwarding
             }
         }
         return "index.php?av&id=$id&status=error";
+    }
+
+    public function editAdminSong($data):string{
+        $song = $this->main->getSong($data["id"]);
+        $info = $song->get();
+        if(count($info)>0){
+            $info = $info["info"];
+            $info["author"] = $data["author"];
+            $info["infotxt"] = $data["infotxt"];
+            $song->edit($data["name"], $info, ($data["status"] ?? "Active") === "Active");
+        }
+        return "index.php?admin&page=songedit&id=" . $data["id"];
+    }
+
+    private function check_file_is_audio($tmp): bool
+    {
+        $allowed = array('aac', 'ac3', 'act', 'aif', 'aiff', 'mp3', 'mpa', 'wav', 'wma', 'ogg','flac', 'rm', 'mpeg');
+        if (in_array($tmp, $allowed, true)) {
+            return true;
+        }
+        return false;
+
     }
 }

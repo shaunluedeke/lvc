@@ -32,7 +32,12 @@ if (isset($_POST)) {
 }else{
     echo("Post not set");
 }
+$debug = false;
 
+if($debug) {
+    echo("<pre>");
+    print_r($data, false);
+}
 $http_refere = "";
 $id = 0;
 
@@ -73,12 +78,18 @@ switch ($type) {
         break;
     }
 
-}
-$debug = false;
+    case "adminstatussong":{
+        $http_refere = "index.php?admin&page=songedit&id=".$data["id"];
+        break;
+    }
 
+    case "adminsongedit":{
+        $http_refere = $forward->editAdminSong($data);
+        break;
+    }
+
+}
 if($debug){
-    echo("<pre>");
-    print_r($data,false);
     echo("</pre><br>Return value: ".$http_refere);
     echo("<br>".$type);
     return;
