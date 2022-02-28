@@ -16,12 +16,7 @@ class Forwarding
 
     public function addSong($data): string
     {
-        if (($data["files"]["songdata"]["type"] === "audio/wav") ||
-            ($data["files"]["songdata"]["type"] === "audio/mp3") ||
-            ($data["files"]["songdata"]["type"] === "audio/wma") ||
-            ($data["files"]["songdata"]["type"] === "audio/aac") ||
-            ($data["files"]["songdata"]["type"] === "audio/ogg") ||
-            ($data["files"]["songdata"]["type"] === "audio/mpeg")) {
+        if ($this->check_file_is_audio(pathinfo($data["files"]["songdata"]['name'])['extension'])) {
             echo("1");
             if (!is_dir("/var/www/html/songdate") && !mkdir("/var/www/html/songdata/new", 0777, TRUE) && !is_dir("/var/www/html/songdate/new")) {
                 echo sprintf('Directory "%s" was not created', "/var/www/html/songdata");

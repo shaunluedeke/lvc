@@ -2,8 +2,6 @@
 
 namespace wcf\system\lvc;
 
-use wcf\system\lvc\SQL;
-
 class Main
 {
     public SQL $sql;
@@ -599,8 +597,8 @@ class charts
     public function changeActive(): bool
     {
         if (!empty($this->get())) {
-             $this->sql->query("UPDATE `charts` SET `Active`='" . (!(bool)$this->get()["active"]? 1:0) . "' WHERE `ID`='$this->id'");
-             return true;
+            $this->sql->query("UPDATE `charts` SET `Active`='" . (!(bool)$this->get()["active"]? 1:0) . "' WHERE `ID`='$this->id'");
+            return true;
         }
         return false;
     }
@@ -853,12 +851,22 @@ class ad{
 
     public function getTitle(): string
     {
+        if($this->file === ""){
+            return "Default";
+        }
         return $this->main->getReadText($this->file)->getArray()[0] ?? "";
     }
 
     public function getText(): string
     {
-        return $this->main->getReadText($this->file)->getString(1) ?? "";
+        $imglink = "";
+        $txt = $this->main->getReadText($this->file)->getArray();
+        $offset = 1;
+        if($this->is_url($txt[1]??"")){
+            $imglink = "<img src='$txt[1]' alt='$txt[0] Logo' class='logobox1'><br>";
+            $offset=2;
+        }
+        return $imglink.($this->main->getReadText($this->file)->getString($offset));
     }
 
     public function getFile():string
@@ -867,10 +875,22 @@ class ad{
         $scan = $this->main->getScan(array("/var/www/html/ad"),array("txt"));
         if($file==="" || !file_exists("/var/www/html/ad/".$this->file)){
             $filescan = $scan->scan();
+            if($filescan === false){
+                return "";
+            }
             $id=0;try {$id = random_int(0, count($filescan) - 1);} catch (\Exception $e) {}
             $file = $filescan[$id] ?? "";
         }
         return $file;
+    }
+    private function is_url($uri):bool{
+        return(preg_match( '/^(http|https):\\/\\/[a-z0-9_]+([\\-\\.]{1}[a-z_0-9]+)*\\.[_a-z]{2,5}'.'((:[0-9]{1,5})?\\/.*)?$/i' ,$uri));
+    }
+    private function isFileImage($file): bool
+    {
+        $result = exif_imagetype($file);
+
+        return is_int($result) && $result >= 1 && $result <= 18;
     }
 }
 
@@ -887,13 +907,15 @@ class scanDir
         $this->ext_filter = $ext_filter;
     }
 
-    public function scan():array
+    public function scan()
     {
-        $this->verifyPaths($this->directories);
+        if(!$this->verifyPaths($this->directories)){
+            return false;
+        }
         return $this->files;
     }
 
-    private function verifyPaths($paths): void
+    private function verifyPaths($paths): bool
     {
         $path_errors = array();
         if (is_string($paths)) {
@@ -909,9 +931,9 @@ class scanDir
             }
         }
         if ($path_errors) {
-            echo "Der Ordner existier nicht!<br />";
-            die(print_r($path_errors, false));
+            return false;
         }
+        return true;
     }
 
     private function find_contents($dir): void
