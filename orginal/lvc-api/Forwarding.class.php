@@ -22,14 +22,14 @@ class Forwarding
                 echo sprintf('Directory "%s" was not created', "/var/www/html/songdata");
             }
             echo("2");
-            $newfilename = $data["songauthor"] . "-" . $data["songname"] . "." . pathinfo($data["files"]["songdata"]['name'])['extension'];
+            $newfilename = Main::deleteSymbol($data["songauthor"] . "-" . $data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension'];
             echo($newfilename);
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/new/" . $newfilename)) {
                 echo("3");
                 $info = array();
                 $info["uploaddate"] = date("d.m.Y");
-                $info["author"] = $data["songauthor"];
-                $info["infotxt"] = $data["songinfo"];
+                $info["author"] = Main::removeSymbol($data["songauthor"]);
+                $info["infotxt"] = Main::removeSymbol($data["songinfo"]);
 
                 if ($this->main->getNewSong()->add($data["songname"], $info, "http://lvcharts.de/songdata/new/" . $newfilename)) {
                     echo("4");
@@ -47,15 +47,14 @@ class Forwarding
         if ($this->check_file_is_audio(pathinfo($data["files"]["songdata"]['name'])['extension'])) {
             $info = array();
             $info["uploaddate"] = date("d.M.Y");
-            $info["author"] = $data["songauthor"];
-            $info["infotxt"] = $data["songinfo"];
-            $id = $this->main->getSong()->add($data["songname"], $info, $data["songname"] . "." . pathinfo($data["files"]["songdata"]['name'])['extension']);
-            echo("2<br>");
+            $info["author"] = Main::removeSymbol($data["songauthor"]);
+            $info["infotxt"] = Main::removeSymbol($data["songinfo"]);
+            $id = $this->main->getSong()->add(Main::removeSymbol($data["songname"]), $info, Main::deleteSymbol($data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension']);
             if ($id < 0) {
                 return "./index.php?admin/&page=addsong&status=error&error=1003";
             }
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/" . $id . "-" .
-                $data["songname"] . "." . pathinfo($data["files"]["songdata"]['name'])['extension'])) {
+                Main::deleteSymbol($data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension'])) {
                 echo("3<br>");
                 return "./index.php?admin/&page=addsong&status=success&id=" . $id;
             }
@@ -84,7 +83,7 @@ class Forwarding
 
     public function addComment($data, $username): string
     {
-        $this->main->getSong((int)$data["songid"])->addComment($username, $data["newcomment"]);
+        $this->main->getSong((int)$data["songid"])->addComment(Main::removeSymbol($username), Main::removeSymbol($data["newcomment"]));
         return "index.php?song/&id=" . $data["songid"];
     }
 
@@ -128,10 +127,10 @@ class Forwarding
         $song = $this->main->getSong($data["id"]);
         $info = $song->get();
         if(count($info)>0){
-            $info = $info["info"];
-            $info["author"] = $data["author"];
-            $info["infotxt"] = $data["infotxt"];
-            $song->edit($data["name"], $info, ($data["status"] ?? "Active") === "Active");
+            $info = ($info["info"]);
+            $info["author"] = Main::removeSymbol($data["author"]);
+            $info["infotxt"] = Main::removeSymbol($data["infotxt"]);
+            $song->edit(Main::removeSymbol($data["name"]), $info, ($data["status"] ?? "Active") === "Active");
         }
         return "index.php?admin&page=songedit&id=" . $data["id"];
     }

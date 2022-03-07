@@ -21,21 +21,21 @@ if ($id !== 0) {
         $d = $user ?'<p>Upvotes: <a href="index.php?song&id='.$id.'&action=upvote"><ion-icon name="thumbs-up-outline"></ion-icon>' . $info["upvotes"] . '</a></p><br>
                    <p>Downvotes: <a href="index.php?song&id='.$id.'&action=downvote"><ion-icon name="thumbs-down-outline"></ion-icon>' . $info["downvotes"] . '</a></p><br>' :
                    '<p>Upvotes: ' . $info["upvotes"] . '</p><br>'.'<p>Downvotes: ' . $info["downvotes"] . '</p><br>';
-        $form->addTitle("Song: " . $info["name"]);
+        $form->addTitle("Song: " . Main::addSymbol($info["name"]));
         $form->addText(
             '<audio controls><source src="' . $info["file"] . '" ></audio><br>
                    <p>Infos:</p><br><br>
                    <ul>
-                      <li>Author: ' . $info["info"]["author"] . '</li>
-                      <li>Info Text: ' . $info["info"]["infotxt"] . '</li>
+                      <li>Author: ' . Main::addSymbol($info["info"]["author"]) . '</li>
+                      <li>Info Text: ' . Main::addSymbol($info["info"]["infotxt"]) . '</li>
                       <li>Upload date: ' . $info["info"]["uploaddate"] . '</li>
                    </ul><br>
                    '.$d);
         echo($form->show());
         foreach ($info["comments"] as $key => $value) {
             $form = new Form();
-            $form->addText('<h5>' . $value["name"] . '</h5>
-                            <h6>   ' . $value["comment"] . '</h6>
+            $form->addText('<h5>' . Main::addSymbol($value["name"]) . '</h5>
+                            <h6>   ' . Main::addSymbol($value["comment"]) . '</h6>
                             <h6>Vom: ' . $value["time"] . '</h6>');
             echo($form->show());
 
@@ -92,8 +92,8 @@ if ($id !== 0) {
     foreach($a as $key => $value){
         if($value["active"]===true) {
             $html .= '<tr>
-                         <th scope="row">' . $value["name"] . '</th>
-                         <td>' . $value["info"]["author"] . '</td>
+                         <th scope="row">' . Main::addSymbol($value["name"]) . '</th>
+                         <td>' . Main::addSymbol($value["info"]["author"]) . '</td>
                          <td>' . $value["info"]["uploaddate"] . '</td>
                          <td><a href="index.php?song/&id=' . $value["id"] . '">Anhören</a></td>
                     </tr>';

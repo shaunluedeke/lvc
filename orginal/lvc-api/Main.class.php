@@ -63,6 +63,22 @@ class Main
         $this->sql->query("CREATE TABLE IF NOT EXISTS `contest` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Name` VARCHAR(200) NOT NULL , `Users` TEXT NOT NULL , `StartingDate` VARCHAR(200) NOT NULL , `EndingDate` VARCHAR(200) NOT NULL , `Activ` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
     }
 
+    public static function removeSymbol(string $txt):string{
+        return str_replace(array("ä", "ü", "ö", "Ä", "Ü", "Ö", "ß", "´","§","&", "'"),
+            array("&auml;", "&uuml;", "&ouml;", "&Auml;", "&Uuml;", "&Ouml;", "&szlig;", "","&sect;","&amp;","&apos;"), $txt);
+    }
+
+    public static function addSymbol(string $txt):string
+    {
+        return str_replace(array("&auml;", "&uuml;", "&ouml;", "&Auml;", "&Uuml;", "&Ouml;", "&szlig;", "´","&sect;","&amp;","&apos;"),
+            array("ä", "ü", "ö", "Ä", "Ü", "Ö", "ß", "","§","&", "'"), $txt);
+    }
+
+    public static function deleteSymbol(string $txt):string
+    {
+        return str_replace(array("ä", "ü", "ö", "Ä", "Ü", "Ö", "ß", "´","§","&", "'"),
+            array("", "", "", "", "", "", "", "","","",""), $txt);
+    }
 }
 
 class history
@@ -159,7 +175,7 @@ class song
         if ($this->id === 0) {
             foreach ($result as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
-                $a[$row["ID"]]["name"] = $row["Songname"];
+                $a[$row["ID"]]["name"] = Main::addSymbol($row["Songname"]);
                 try {
                     $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
@@ -176,7 +192,7 @@ class song
         } else {
             foreach ($result as $row) {
                 $a["id"] = $row["ID"];
-                $a["name"] = $row["Songname"];
+                $a["name"] = Main::addSymbol($row["Songname"]);
                 try {
                     $a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
@@ -203,7 +219,7 @@ class song
         $a = array();
         foreach ($result as $row) {
             $a[$row["ID"]]["id"] = $row["ID"];
-            $a[$row["ID"]]["name"] = $row["Songname"];
+            $a[$row["ID"]]["name"] = Main::addSymbol($row["Songname"]);
             try {
                 $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
@@ -421,7 +437,7 @@ class newsong
         if ($this->id === 0) {
             foreach (($result) as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
-                $a[$row["ID"]]["name"] = $row["Songname"];
+                $a[$row["ID"]]["name"] = Main::addSymbol($row["Songname"]);
                 try {
                     $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
@@ -431,7 +447,7 @@ class newsong
         } else {
             foreach (($result) as $row) {
                 $a["id"] = $row["ID"];
-                $a["name"] = $row["Songname"];
+                $a["name"] = Main::addSymbol($row["Songname"]);
                 try {
                     $a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {

@@ -85,7 +85,7 @@ else {
         foreach ($chart->get()["songid"] as $value){
             $song = $main->getSong((int)$value);
             $info = $song->get();
-            $form->addText('<tr><td>'.$info["name"].'</td><td><audio controls><source src="' . $info["file"] . '" ></audio></td>
+            $form->addText('<tr><td>'.Main::addSymbol($info["name"]).'</td><td><audio controls><source src="' . $info["file"] . '" ></audio></td>
                                 <td><input type="number" min="0" max="3" value="0" name="voting/'.$song->getId().'"></td></tr>');
         }
         $form->addText("</tbody></table><br><br>");

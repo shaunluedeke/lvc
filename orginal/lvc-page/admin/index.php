@@ -66,7 +66,7 @@ switch ($page) {
         if ($id === 0) {
             $form->addTitle("Song Status");
             $form->addText("Bitte gebe eine Song ID ein.");
-            $form->addNumber("Song ID", "", "id", 0, 1);
+            $form->addNumber("Song ID", "", "id", 0, 1,0,1000000000000000,true,false);
             $form->addButton("Abfragen", "button", "adminstatussong");
             echo($form->show());
         } else {
@@ -75,9 +75,9 @@ switch ($page) {
 
             if (count($song) > 0) {
                 $form->addNumber("Song ID", "", "id", $id, 0, 0, 1000000000, true, true);
-                $form->addInput("Song Name", "", "name", $song["name"], true);
-                $form->addInput("Song Author", "", "author", $song["info"]["author"], true);
-                $form->addTextarea("Song Info", "", "infotxt", $song["info"]["infotxt"]);
+                $form->addInput("Song Name", "", "name", Main::addSymbol($song["name"]), true);
+                $form->addInput("Song Author", "", "author", Main::addSymbol($song["info"]["author"]), true);
+                $form->addTextarea("Song Info", "", "infotxt", Main::addSymbol($song["info"]["infotxt"]));
                 $form->addCheck("Song Status", "", "Active", "Deactive", "status", false);
                 $form->setCheck($song["active"]);
                 $form->addButton("Ändern", "button", "adminsongedit");
@@ -158,7 +158,7 @@ switch ($page) {
                  <tr>
                   <th scope="row">Platz ' . $platz . '</th>
                   <td>' . $key . '</td>
-                  <td>' . $songinfos["name"] . '</td>
+                  <td>' . Main::addSymbol($songinfos["name"]) . '</td>
                   <td>' . $value . '</td>
                   <td><a class="btn btn-primary" href="index.php?song&id=' . $key . '">Anhören</a></td>
                 </tr>

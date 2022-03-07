@@ -41,8 +41,8 @@ $html = '
         $a = $log->getAll($offset, $limit,$new);
         foreach($a as $key => $value){
             $html.='<tr>
-                         <th scope="row">'.$value["name"].'</th>
-                         <td>'.$value["info"]["author"].'</td>
+                         <th scope="row">'.Main::addSymbol($value["name"]).'</th>
+                         <td>'.Main::addSymbol($value["info"]["author"]).'</td>
                          <td>'.$value["date"].'</td>
                          <td>'.($value["status"] ? "Neu" : "Gelöscht").'</td>
                     </tr>';
