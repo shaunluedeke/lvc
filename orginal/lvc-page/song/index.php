@@ -13,38 +13,44 @@ $form = new Form();
 if ($id !== 0) {
     $info = $songs->get();
     if (!empty($info)) {
-        $action = $_GET['action'] ?? "";
-        if($action==="upvote" || $action==="downvote"){
-            $songs->addVote( 1,($action==="downvote"));
-            header("Location: index.php?song&id=$id");
-        }
-        $d = $user ?'<p>Upvotes: <a href="index.php?song&id='.$id.'&action=upvote"><ion-icon name="thumbs-up-outline"></ion-icon>' . $info["upvotes"] . '</a></p><br>
-                   <p>Downvotes: <a href="index.php?song&id='.$id.'&action=downvote"><ion-icon name="thumbs-down-outline"></ion-icon>' . $info["downvotes"] . '</a></p><br>' :
-                   '<p>Upvotes: ' . $info["upvotes"] . '</p><br>'.'<p>Downvotes: ' . $info["downvotes"] . '</p><br>';
-        $form->addTitle("Song: " . Main::addSymbol($info["name"]));
-        $form->addText(
-            '<audio controls><source src="' . $info["file"] . '" ></audio><br>
+        if(!$info["active"]) {
+            $form->addTitle("Song is not active");
+            $form->addText('Please contact the admin to activate this song or choose another one.<br><br><a href="index.php?song">Back</a>');
+        }else {
+            $action = $_GET['action'] ?? "";
+            if ($action === "upvote" || $action === "downvote") {
+                $songs->addVote(1, ($action === "downvote"));
+                header("Location: index.php?song&id=$id");
+            }
+            $d = $user ? '<p>Upvotes: <a href="index.php?song&id=' . $id . '&action=upvote"><ion-icon name="thumbs-up-outline"></ion-icon>' . $info["upvotes"] . '</a></p><br>
+                   <p>Downvotes: <a href="index.php?song&id=' . $id . '&action=downvote"><ion-icon name="thumbs-down-outline"></ion-icon>' . $info["downvotes"] . '</a></p><br>' :
+                '<p>Upvotes: ' . $info["upvotes"] . '</p><br>' . '<p>Downvotes: ' . $info["downvotes"] . '</p><br>';
+            $form->addTitle("Song: " . Main::addSymbol($info["name"]));
+            $infotext = $info["info"]["infotxt"] === "" ? "" : '<li>Info Text: ' . Main::addSymbol($info["info"]["infotxt"]) . '</li>';
+            $form->addText(
+                '<audio controls><source src="' . $info["file"] . '" ></audio><br>
                    <p>Infos:</p><br><br>
                    <ul>
                       <li>Author: ' . Main::addSymbol($info["info"]["author"]) . '</li>
-                      <li>Info Text: ' . Main::addSymbol($info["info"]["infotxt"]) . '</li>
+                      ' . $infotext . '
                       <li>Upload date: ' . $info["info"]["uploaddate"] . '</li>
                    </ul><br>
-                   '.$d);
-        echo($form->show());
-        foreach ($info["comments"] as $key => $value) {
-            $form = new Form();
-            $form->addText('<h5>' . Main::addSymbol($value["name"]) . '</h5>
+                   ' . $d);
+            echo($form->show());
+            foreach ($info["comments"] as $key => $value) {
+                $form = new Form();
+                $form->addText('<h5>' . Main::addSymbol($value["name"]) . '</h5>
                             <h6>   ' . Main::addSymbol($value["comment"]) . '</h6>
                             <h6>Vom: ' . $value["time"] . '</h6>');
-            echo($form->show());
+                echo($form->show());
 
-        }
-        $form = new Form();
-        if($user) {
-            $form->addInput("New Comment", "", "newcomment", "", true);
-            $form->addHidden("songid", $id);
-            $form->addButton("Hinzufügen", "button", "addcomment");
+            }
+            $form = new Form();
+            if ($user) {
+                $form->addInput("New Comment", "", "newcomment", "", true);
+                $form->addHidden("songid", $id);
+                $form->addButton("Hinzufügen", "button", "addcomment");
+            }
         }
     }else{
         $form->addTitle("Song: " . $id);
