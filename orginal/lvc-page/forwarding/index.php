@@ -87,6 +87,18 @@ switch ($type) {
         $http_refere = $forward->editAdminSong($data);
         break;
     }
+    case "adminnewsongdownload":{
+        $http_refere = $forward->downloadnewAdminSong($data);
+        break;
+    }
+    case "adminnewsongdelete":{
+        $http_refere = $forward->deletenewAdminSong($data);
+        break;
+    }
+    case "adminnewsongadd":{
+        $http_refere = $forward->addnewAdminSong($data);
+        break;
+    }
 
 }
 if($debug){

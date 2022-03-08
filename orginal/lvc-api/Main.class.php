@@ -458,14 +458,13 @@ class newsong
         return $a;
     }
 
-    public function add(string $name, array $info, string $file): bool
+    public function add(string $name, array $info, string $file): void
     {
         try {
             $infos = json_encode($info, JSON_THROW_ON_ERROR);
-            return $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$infos','$file')");
+             $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$infos','$file')");
         } catch (\JsonException $e) {
         }
-        return false;
     }
 
     public function remove(): bool

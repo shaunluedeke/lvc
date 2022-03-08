@@ -13,6 +13,59 @@ $page = $_GET['page'] ?? "";
 $main = new Main();
 
 switch ($page) {
+    case "newsongs":{
+        $form = new Form();
+        $id = $_GET["id"] ?? 0;
+        $action = $_GET["action"] ?? "";
+        $newsongs = $main->getNewSong($id);
+        if(count($newsongs->get())<1){
+            $form->addTitle("No new songs found");
+            $form->addText("No new songs found<br><br><a href='index.php?admin'>Back</a>");
+            $form->show();
+        }
+        else if(count($newsongs->get())>1){
+            $html = '<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true" data-search="true"><thead><tr>  <th scope="col" data-sortable="true" data-field="Akte">Name</th><th scope="col" data-sortable="true" data-field="name">Author</th> <th scope="col" data-sortable="true" data-field="port">Datum</th><th scope="col" data-field="date"></th></tr></thead><tbody> ';
+            $a = $newsongs->get();
+            foreach($a as $key => $value){
+                if($value["active"]===true) {
+                    $html .= '<tr>
+                        <th scope="row">' . Main::addSymbol($value["name"]) . '</th>
+                         <td>' . Main::addSymbol($value["info"]["author"]) . '</td>
+                         <td>' . $value["info"]["uploaddate"] . '</td>
+                         <td><a href="index.php?admin/&page=newsong&id=' . $value["id"] . '">Anhören</a></td>
+                    </tr>';
+                }
+            }
+            $html.='</tbody></table>';
+            $form->addText($html);
+        }
+        else {
+            $info = $newsongs->get();
+            $form->addTitle("Song: " . Main::addSymbol($info["name"]));
+            $infotext = $info["info"]["infotxt"] === "" ? "" : '<li>Info Text: ' . Main::addSymbol($info["info"]["infotxt"]) . '</li>';
+            $form->addText(
+                '<audio controls><source src="' . $info["file"] . '" ></audio><br>
+                   <p>Infos:</p><br><br>
+                   <ul>
+                      <li>Author: ' . Main::addSymbol($info["info"]["author"]) . '</li>
+                      ' . $infotext . '
+                      <li>Upload date: ' . $info["info"]["uploaddate"] . '</li>
+                   </ul><br>
+                   ');
+            echo($form->show());
+            $form = new Form();
+            $form->addTitle("Controller:");
+            $form->addNumber("ID", "Songid", "id", $info["id"],0,0,100000000000000,true,true);
+            $form->addButton("Downloaden", "button", "adminnewsongdownload");
+            $form->addButton("Löschen", "button", "adminnewsongdelete");
+            $form->addButton("Hinzufügen", "button", "adminnewsongadd");
+            $form->addText("<br><br><a href='index.php?admin'>Back</a>");
+
+        }
+
+        break;
+    }
+
     case "addsong":
     {
         $form = new Form();
@@ -211,6 +264,10 @@ switch ($page) {
         $form->addTitle("Admin Site | Songs");
         $form->addText("<a href='index.php?admin&page=addsong' class='btm btn-primary'>Song hinzufügen</a><br><br>
                             <a href='index.php?admin&page=songedit' class='btm btn-primary'>Song ändern</a>");
+        echo($form->show());
+        $form = new Form();
+        $form->addTitle("Admin Site | Neue Songs");
+        $form->addText("<a href='index.php?admin&page=newsongs' class='btm btn-primary'>Song aufrufen</a>");
         echo($form->show());
         break;
     }

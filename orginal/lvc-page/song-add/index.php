@@ -42,8 +42,8 @@ switch ($returntype) {
         $form->addTitle("New Song upload");
         $form->addInput("Song Name", "", "songname", "", true);
         $form->addInput("Song Author", "", "songauthor", "", true);
-        $form->addUpload("Song Datei", "New Data", "songdata", "audio/mp3,audio/wav,audio/aac,audio/wma,audio/ogg", false);
-        $form->addTextarea("Song Infos", "", "songinfo", "", true);
+        $form->addUpload("Song Datei", "New Data", "songdata", "audio/mp3,audio/wav,audio/aac,audio/wma,audio/ogg", true);
+        $form->addTextarea("Song Infos", "", "songinfo", "", false);
         $form->addButton("Hinzufügen","button", "songadd");
 
         echo($form->show());

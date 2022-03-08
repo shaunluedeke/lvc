@@ -58,7 +58,8 @@ if ($id !== 0) {
     }
     echo($form->show());
 
-}else{
+}
+else{
     $pageurl = "index.php?song/";
     $name = $_GET['name'] ?? "";
     if($name!==""){$pageurl .="&name=".$name;}
