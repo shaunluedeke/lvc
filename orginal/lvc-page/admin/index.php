@@ -10,12 +10,12 @@ $form = new Form();
 $main = new Main();
 
 $page = $_GET['page'] ?? "";
+$id = (int)($_GET["id"] ?? 0);
 $main = new Main();
 
 switch ($page) {
     case "newsongs":{
         $form = new Form();
-        $id = $_GET["id"] ?? 0;
         $action = $_GET["action"] ?? "";
         $newsongs = $main->getNewSong($id);
         if(count($newsongs->get())<1){
@@ -23,7 +23,7 @@ switch ($page) {
             $form->addText("No new songs found<br><br><a href='index.php?admin'>Back</a>");
             $form->show();
         }
-        else if(count($newsongs->get())>1){
+        else if($id === 0 || count($newsongs->get())>1){
             $html = '<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true" data-search="true"><thead><tr>  <th scope="col" data-sortable="true" data-field="Akte">Name</th><th scope="col" data-sortable="true" data-field="name">Author</th> <th scope="col" data-sortable="true" data-field="port">Datum</th><th scope="col" data-field="date"></th></tr></thead><tbody> ';
             $a = $newsongs->get();
             foreach($a as $key => $value){
@@ -38,6 +38,7 @@ switch ($page) {
             }
             $html.='</tbody></table>';
             $form->addText($html);
+           echo($form->show());
         }
         else {
             $info = $newsongs->get();
@@ -55,12 +56,12 @@ switch ($page) {
             echo($form->show());
             $form = new Form();
             $form->addTitle("Controller:");
-            $form->addNumber("ID", "Songid", "id", $info["id"],0,0,100000000000000,true,true);
+            $form->addNumber("ID", "Songid", "id", (int)$info["id"],0,0,100000000000000,true,true);
             $form->addButton("Downloaden", "button", "adminnewsongdownload");
             $form->addButton("Löschen", "button", "adminnewsongdelete");
             $form->addButton("Hinzufügen", "button", "adminnewsongadd");
             $form->addText("<br><br><a href='index.php?admin'>Back</a>");
-
+            echo($form->show());
         }
 
         break;
