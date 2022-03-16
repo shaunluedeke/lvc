@@ -103,14 +103,35 @@ class Forwarding
                 foreach ($data as $key => $value) {
                     if (strpos($key, "voting/") === 0) {
                         $songid = (int)explode("/", $key)[1];
-                        if (($songid !== 0) && ((int)$value !== 0) && $charts->addVote($songid, $userid, (int)$value)) {
-                            return "index.php?av&id=$id&status=success";
+                        if (($songid !== 0) && ((int)$value !== 0)) {
+                            $a = (int)$value === 3 ? 1 : $value;
+                            $value = (int)$value === 1 ? 3 : $a;
+                            $charts->addVote($songid, $userid, (int)$value);
                         }
                     }
                 }
             }
         }
-        return "index.php?av&id=$id&status=error";
+        return "index.php?av&id=$id&status=success";
+    }
+
+    public function setAVAdmin(int $id, $data):string{
+        if ($id !== 0) {
+            $charts = $this->main->getChart($id);
+            if (count($charts->get()) > 0) {
+                foreach ($data as $key => $value) {
+                    if (strpos($key, "voting/") === 0) {
+                        $songid = (int)explode("/", $key)[1];
+                        if (($songid !== 0) && ((int)$value !== 0)) {
+                            $a = (int)$value === 3 ? 1 : $value;
+                            $value = (int)$value === 1 ? 3 : $a;
+                            $charts->addAdminVote($songid, (int)$value);
+                        }
+                    }
+                }
+            }
+        }
+        return "index.php?admin&page=av-vote&status=success";
     }
 
     public function editAdminSong($data):string{

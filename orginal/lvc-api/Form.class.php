@@ -56,16 +56,17 @@ class Form
     }
 
 
-    public function addSelect($title, $text, $id, ...$args): void
+    public function addSelect($title, $text, $id, $args, bool $require = false,bool $multi = false): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "select";
         $this->vars[$this->lastTitle][$this->lastnum]["title"] = $title;
         $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
+        $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
+        $this->vars[$this->lastTitle][$this->lastnum]["multi"] = $multi;
         $i = 0;
         foreach ($args as $arg) {
-
             $this->vars[$this->lastTitle][$this->lastnum]["option"][$i] = $arg;
             $i++;
         }
@@ -78,13 +79,15 @@ class Form
         $this->vars[$this->lastTitle][$this->lastnum - 1]["select"] = $text;
     }
 
-    public function addList($title, $text, $id, ...$args): void
+    public function addList($title, $text, $id, $args, bool $require = false,bool $multi = false): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "list";
         $this->vars[$this->lastTitle][$this->lastnum]["title"] = $title;
         $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
+        $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
+        $this->vars[$this->lastTitle][$this->lastnum]["multi"] = $multi;
         $i = 0;
         foreach ($args as $arg) {
 
@@ -321,8 +324,8 @@ class Form
                 } else if ($var["art"] === "rage") {
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="range" id="' . $id . '" name="' . $id . '" min="' . $var["min"] . '" max="' . $var["max"] . '" step="' . $var["step"] . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "list") {
-
-                    $r .= '<input ' . $style . ' ' . $extra . ' type="text" id="' . $id . '" name="' . $id . '" list="list_' . $id . '" class="medium">';
+                    $multi = ($var["multi"] ?? false) ? "multiple" : "";
+                    $r .= '<input ' . $style . ' ' . $extra . ' type="text" id="' . $id . '" name="' . $id . '" list="list_' . $id . '" class="medium" '.$multi.'>';
                     $r .= '<datalist id="list_' . $id . '">';
 
                     foreach ($var["option"] as $k) {
@@ -335,7 +338,8 @@ class Form
                 } else if ($var["art"] === "textarea") {
                     $r .= '<textarea ' . $style . ' ' . $extra . ' id="' . $id . '" name="' . $id . '" cols="40" rows="5" >' . $var["value"] . '</textarea>';
                 }  else if ($var["art"] === "select") {
-                    $r .= '<select ' . $style . ' ' . $extra . ' id="' . $id . '" name="' . $id . '">';
+                    $multi = ($var["multi"] ?? false) ? "multiple" : "";
+                    $r .= '<select ' . $style . ' ' . $extra . ' id="' . $id . '" name="' . $id . '" '.$multi.'>';
                     $true = true;
                     foreach (($var["option"]) as $k) {
 

@@ -169,6 +169,11 @@ switch ($page) {
 
         $cl = $main->getChart($id)->get();
         if (count($cl) < 1 || ($action === "add")) {
+            $song = $main->getSong()->get();
+            $a = [];
+            foreach ($song as $s) {
+                $a[] = $s["id"];
+            }
             $form->addTitle("Neue Abstimmungs Hinzufügen");
             $form->addInput("Song IDs", "Trennung mit ,", "songids", "", true);
             $form->addCalender("Start Datum", "", "startdate");
@@ -255,11 +260,58 @@ switch ($page) {
         break;
     }
 
+    case "av-vote":{
+        if(($_GET["status"] ?? "")==="success"){
+
+            $form = new Form();
+            $form->addTitle("Abstimmungs Verwaltung");
+            $form->addText("<h1>Vielen Dank für deine Stimme!</h1>");
+            echo($form->show());
+        }
+        $id = $_GET["id"] ?? 0;
+        $action = $_GET["action"] ?? "";
+        $cl = $main->getChart($id)->get();
+
+        if(count($cl) === 1) {
+            try {
+                foreach ($cl as $key => $value) {
+                    $id = $id !== 0 ? $id : $value["id"];
+                }
+            }catch (Exception $e){ }
+            $chart = $main->getChart($id);
+            $form = new Form();
+            $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
+           data-search="false">
+        <thead>
+        <tr>
+            <th scope="col" data-sortable="true" data-field="Akte">Song Name</th>
+            <th scope="col" data-sortable="true" data-field="Akte">Song Author</th>
+            <th scope="col" data-sortable="true" data-field="name">Song</th>
+            <th scope="col" data-sortable="true" data-field="port">Voting</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>');
+
+            foreach ($chart->get()["songid"] as $value){
+                $song = $main->getSong((int)$value);
+                $info = $song->get();
+                $form->addText('<tr><td>'.Main::addSymbol($info["name"]).'</td><td>'.Main::addSymbol($info["info"]["author"]).'</td><td><audio controls><source src="' . $info["file"] . '" ></audio></td>
+                                <td><input type="number" min="0" max="3" value="0" name="voting/'.$song->getId().'"></td></tr>');
+            }
+            $form->addText("</tbody></table><br><br>");
+            $form->addButton("Abstimmen", "button", "avadmin/$id");
+            echo($form->show());
+        }
+        break;
+    }
+
     default:
     {
         $form = new Form();
         $form->addTitle("Admin Site | Abstimmung");
-        $form->addText("<a href='index.php?admin&page=av' class='btn btn-primary'>Abstimmung verwalten</a>");
+        $form->addText("<a href='index.php?admin&page=av' class='btn btn-primary'>Abstimmung verwalten</a><br><br>");
+        $form->addText("<a href='index.php?admin&page=av-vote' class='btn btn-primary'>Punkte hinzufügen</a>");
         echo($form->show());
         $form = new Form();
         $form->addTitle("Admin Site | Songs");

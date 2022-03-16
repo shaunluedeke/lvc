@@ -599,6 +599,22 @@ class charts
         return false;
     }
 
+    public function addAdminVote(int $songid, int $amount): bool
+    {
+        $infos = $this->get();
+        $votes = $infos["votes"] ?? array();
+
+        $votes[random_int(10000000, 9999999999999)][$songid] = $amount;
+        if ($infos["active"]) {
+            try {
+                $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+                return true;
+            } catch (\JsonException $e) {
+            }
+        }
+        return false;
+    }
+
     public function hasVoted(int $userid): bool
     {
         $infos = $this->get();

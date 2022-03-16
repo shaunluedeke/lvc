@@ -41,9 +41,13 @@ if($debug) {
 $http_refere = "";
 $id = 0;
 
-if(strpos($type, "av/") === 0){
+if(strpos($type, "av/") === 0 ){
     $id = ((int)explode("/", $type)[1]);
     $type = "av";
+}
+if(strpos($type, "avadmin/") === 0 ){
+    $id = ((int)explode("/", $type)[1]);
+    $type = "avadmin";
 }
 
 switch ($type) {
@@ -77,6 +81,11 @@ switch ($type) {
         $http_refere = $forward->setAV($id,$user->userID,$data);
         break;
     }
+    case "avadmin":{
+        $http_refere = $forward->setAVAdmin($id,$data);
+        break;
+    }
+
 
     case "adminstatussong":{
         $http_refere = "index.php?admin&page=songedit&id=".$data["id"];
