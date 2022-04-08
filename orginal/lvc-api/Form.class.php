@@ -197,13 +197,14 @@ class Form
     }
 
 
-    public function addButton($value1, $id, $value2): void
+    public function addButton($value1, $id, $value2,$extra = ""): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "button";
         $this->vars[$this->lastTitle][$this->lastnum]["value1"] = $value1;
         $this->vars[$this->lastTitle][$this->lastnum]["value2"] = $value2;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
+        $this->vars[$this->lastTitle][$this->lastnum]["extra"] = $extra;
         $this->lastnum++;
     }
 
@@ -273,7 +274,10 @@ class Form
 
 
                 if ($var["art"] === "button") {
-
+                    if($extra === "disabled"){
+                        $r .= '<button ' . $style . ' ' . $extra . ' class="buttondanger" accesskey="s" id="' . $id . '" value="' . $var["value2"] . '" name="' . $id . '" data-type="save">' . $var["value1"] . '</button>';
+                        continue;
+                    }
                     $r .= '<button ' . $style . ' ' . $extra . ' class="buttonPrimary" accesskey="s" id="' . $id . '" value="' . $var["value2"] . '" name="' . $id . '" data-type="save">' . $var["value1"] . '</button>';
                     continue;
                 }

@@ -533,7 +533,6 @@ class charts
         $sql = $this->id === 0 ? "SELECT * FROM `charts`".$activ : "SELECT * FROM `charts` WHERE `ID`='$this->id'".$activ1;
         $result = $this->sql->result($sql);
         $a = array();
-        if ($this->id === 0) {
             foreach ($result as $row) {
                 $a[$row["ID"]]["id"] = $row["ID"];
                 try {
@@ -548,22 +547,6 @@ class charts
                 $a[$row["ID"]]["startdate"] = $row["StartDate"];
                 $a[$row["ID"]]["active"] = (bool)$row["Active"];
             }
-        } else {
-            foreach ($result as $row) {
-                $a["id"] = $row["ID"];
-                try {
-                    $a["songid"] = json_decode($row["SongIDs"], true, 512, JSON_THROW_ON_ERROR);
-                } catch (\JsonException $e) {
-                }
-                try {
-                    $a["votes"] = json_decode($row["Votes"], true, 512, JSON_THROW_ON_ERROR);
-                } catch (\JsonException $e) {
-                }
-                $a["enddate"] = $row["ENDDate"];
-                $a["startdate"] = $row["StartDate"];
-                $a["active"] = (bool)$row["Active"];
-            }
-        }
         return $a;
     }
 
@@ -599,20 +582,23 @@ class charts
         return false;
     }
 
-    public function addAdminVote(int $songid, int $amount): bool
+    public function addAdminVote(int $songid, int $amount, int $id=0): int
     {
         $infos = $this->get();
         $votes = $infos["votes"] ?? array();
-
-        $votes[random_int(10000000, 9999999999999)][$songid] = $amount;
+        if($id === 0) {
+            try {
+                $id = random_int(10000000, 9999999999999);
+            } catch (\Exception $e) {}
+        }
+        $votes[$id][$songid] = $amount;
         if ($infos["active"]) {
             try {
                 $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
-                return true;
             } catch (\JsonException $e) {
             }
         }
-        return false;
+        return $id;
     }
 
     public function hasVoted(int $userid): bool
@@ -654,22 +640,36 @@ class charts
         if($this->id === 0) {
             $cl = $this->get();
             foreach ($cl as $c => $cv) {
-                foreach ($cl["votes"] as $key => $value) {
+                foreach ($cv["votes"] as $key => $value) {
                     foreach ($value as $key2 => $value2) {
                         $num = ($ar[$cv["id"]][$key2]) ?? 0;
                         $num += $value2;
                         $ar[$cv["id"]][$key2] = $num;
                     }
                 }
+                foreach($cv["songid"] as $key){
+                    $num = ($ar[$cv["id"]][$key]) ?? 0;
+                    if($num !== 0) {
+                        continue;
+                    }
+                    $ar[$cv["id"]][$key] = $num;
+                }
             }
         }else{
-            $cl = $this->get()["votes"];
-            foreach ($cl as $key => $value) {
+            $cl = $this->get();
+            foreach ($cl[$this->id]["votes"] as $key => $value) {
                 foreach ($value as $key2 => $value2) {
                     $num = ($ar[$key2]) ?? 0;
                     $num += $value2;
                     $ar[$key2] = $num;
                 }
+            }
+            foreach($cl[$this->id]["songid"] as $key){
+                $num = ($ar[$key]) ?? 0;
+                if($num !== 0) {
+                    continue;
+                }
+                $ar[$key] = $num;
             }
         }
         return $ar;

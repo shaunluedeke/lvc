@@ -87,7 +87,7 @@ else {
             $song = $main->getSong((int)$value);
             $info = $song->get();
             $form->addText('<tr><td>'.Main::addSymbol($info["name"]).'</td><td>'.Main::addSymbol($info["info"]["author"]).'</td><td><audio controls><source src="' . $info["file"] . '" ></audio></td>
-                                <td><input type="number" min="0" max="3" value="0" name="voting/'.$song->getId().'"></td></tr>');
+                                <td><input type="number" min="0" max="3" placeholder="Platz 1 bis 3" name="voting/'.$song->getId().'"></td></tr>');
         }
         $form->addText("</tbody></table><br><br>");
         if(!$voted){
