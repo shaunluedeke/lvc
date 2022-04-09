@@ -560,7 +560,7 @@ class charts
 
     public function addVote(int $songid, int $userid, int $amount): bool
     {
-        $infos = $this->get();
+        $infos = $this->get()[$this->id] ?? array();
         $votes = $infos["votes"] ?? array();
 
         if (array_key_exists($userid, $votes)) {
@@ -584,7 +584,7 @@ class charts
 
     public function addAdminVote(int $songid, int $amount, int $id=0): int
     {
-        $infos = $this->get();
+        $infos = $this->get()[$this->id] ?? array();
         $votes = $infos["votes"] ?? array();
         if($id === 0) {
             try {
@@ -603,7 +603,7 @@ class charts
 
     public function hasVoted(int $userid): bool
     {
-        $infos = $this->get();
+        $infos = $this->get()[$this->id];
         $votes = $infos["votes"] ?? array();
         if (array_key_exists($userid, $votes)) {
             return count($votes[$userid]) > 3;

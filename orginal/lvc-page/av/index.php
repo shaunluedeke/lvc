@@ -10,14 +10,12 @@ $form = new Form();
 
 $id = $_GET['id'] ?? 0;
 $chart = $main->getChart($id);
-
 if (count($chart->get()) < 1)
 {
     $form->addTitle("Charts");
     $form->addText('Es wurden noch keine Charts erstellt.<br><br><a href="index.php">Zurück</a>');
 }
 else {
-
     if ($id === 0) {
         $form->addTitle("Alle Charts");
         $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="false"
@@ -60,15 +58,15 @@ else {
                 $form = new Form();
                 break;
         }
+
         $form->addTitle("Charts");
-        if(!$chart->get()["active"]) {
+        if(!($chart->get()[$id]["active"] ?? false)){
             $form->addText('<div class="alert alert-danger" role="alert">Dieser Chart ist nicht aktiv!</div>');
         }else{
-            $form->addText('Die Charts werden nach dem ' . date("d.m.Y",strtotime($chart->get()["enddate"])) . ' um ' . date("H:i:s",strtotime($chart->get()["enddate"])) . ' automatisch geschlossen.<br><br>');
+            $form->addText('Die Charts werden nach dem ' . date("d.m.Y",strtotime($chart->get()[$id]["enddate"])) . ' um ' . date("H:i:s",strtotime($chart->get()[$id]["enddate"])) . ' automatisch geschlossen.<br><br>');
         }
 
         echo($form->show());
-
         $form = new Form();
         $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
            data-search="false">
@@ -83,7 +81,7 @@ else {
         </thead>
         <tbody>');
 
-        foreach ($chart->get()["songid"] as $value){
+        foreach ($chart->get()[$id]["songid"] as $value){
             $song = $main->getSong((int)$value);
             $info = $song->get();
             $form->addText('<tr><td>'.Main::addSymbol($info["name"]).'</td><td>'.Main::addSymbol($info["info"]["author"]).'</td><td><audio controls><source src="' . $info["file"] . '" ></audio></td>
