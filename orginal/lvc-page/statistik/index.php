@@ -40,7 +40,7 @@ foreach ($a as $key => $value) {
     $html .= '
              <tr>
               <th scope="row">' . Main::addSymbol($value["name"]) . '</th>
-              <td>' . $value["upvotes"] . '</td>
+              <td>' . $value["votes"] . '</td>
               <td><a class="btn btn-primary" href="index.php?song&id=' . $value["id"] . '">Anhören</a></td>
             </tr>
             ';

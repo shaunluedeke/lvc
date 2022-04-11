@@ -79,6 +79,21 @@ class Main
         return str_replace(array("ä", "ü", "ö", "Ä", "Ü", "Ö", "ß", "´","§","&", "'"),
             array("", "", "", "", "", "", "", "","","",""), $txt);
     }
+
+    public function arrsort (&$array, $key):array {
+        $sorter = array();
+        $ret = array();
+        reset($array);
+        foreach ($array as $ii => $va) {
+            $sorter[$ii] = $va[$key];
+        }
+        arsort($sorter, SORT_NUMERIC);
+        foreach ($sorter as $ii => $va) {
+            $ret[$ii] = $array[$ii];
+        }
+        $array = $ret;
+        return $array;
+    }
 }
 
 class history
@@ -183,10 +198,11 @@ class song
                 $a[$row["ID"]]["file"] = $row["Songfile"];
                 try {
                     $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["ID"]]["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["ID"]]["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a[$row["ID"]]["upvotes"] = (int)($row["Upvotes"]);
-                $a[$row["ID"]]["downvotes"] = (int)$row["Downvotes"];
+
                 $a[$row["ID"]]["active"] = (bool)$row["Active"];
             }
         } else {
@@ -200,10 +216,10 @@ class song
                 $a["file"] = $row["Songfile"];
                 try {
                     $a["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a["upvotes"] = (int)($row["Upvotes"]);
-                $a["downvotes"] = (int)$row["Downvotes"];
                 $a["active"] = (bool)$row["Active"];
             }
         }
@@ -227,10 +243,10 @@ class song
             $a[$row["ID"]]["file"] = $row["Songfile"];
             try {
                 $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["ID"]]["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["ID"]]["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["upvotes"] = (int)($row["Upvotes"]);
-            $a[$row["ID"]]["downvotes"] = (int)$row["Downvotes"];
             $a[$row["ID"]]["active"] = (bool)$row["Active"];
         }
         return $a;
@@ -243,7 +259,7 @@ class song
             $id = $this->generateSongID();
             $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
             $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
-                " ('$id','$name','" . json_encode($info, JSON_THROW_ON_ERROR) . "','$file','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','0','0','1')");
+                " ('$id','$name','" . json_encode($info, JSON_THROW_ON_ERROR) . "','$file','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','1')");
         } catch (\JsonException $e) {
         }
         $this->id = $id;
@@ -328,29 +344,52 @@ class song
 
     public function getVoting($downvotes = false): int
     {
-        return !$downvotes ? $this->get()["upvotes"] : $this->get()["downvotes"];
+        return !$downvotes ? count($this->get()["upvotes"]??array()) : count($this->get()["downvotes"]??array());
     }
 
-    public function addVote(int $amount = 1, bool $downvotes = false): void
+    public function addVote(int $userid,int $amount = 1, bool $downvotes = false): bool
     {
-        $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . ($this->getVoting($downvotes) + $amount) . "' WHERE `ID`='$this->id'"
-            : "UPDATE `songs` SET `Downvotes`='" . ($this->getVoting($downvotes) + $amount) . "' WHERE `ID`='$this->id'";
-        $this->sql->query($sql);
+        if($this->hasVoted($userid,$downvotes)){
+            return $this->removeVote($userid,$amount,$downvotes);
+        }
+        $array = $downvotes ? $this->get()["downvotes"] : $this->get()["upvotes"];
+        $array[$userid] = $amount;
+        try {
+            $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'"
+                : "UPDATE `songs` SET `Downvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'";
+            $this->sql->query($sql);
+            return true;
+        } catch (\JsonException $e) {
+        }
+        return false;
     }
 
-    public function removeVote(int $amount = 1, bool $downvotes = false): void
+    public function removeVote(int $userid,int $amount = 1, bool $downvotes = false): bool
     {
-        $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . ($this->getVoting($downvotes) - $amount) . "' WHERE `ID`='$this->id'"
-            : "UPDATE `songs` SET `Downvotes`='" . ($this->getVoting($downvotes) - $amount) . "' WHERE `ID`='$this->id'";
-        $this->sql->query($sql);
+        if(!$this->hasVoted($userid,$downvotes)){
+            return false;
+        }
+        $array = $downvotes ? $this->get()["downvotes"] : $this->get()["upvotes"];
+        unset($array[$userid]);
+        try {
+            $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'"
+                : "UPDATE `songs` SET `Downvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'";
+            $this->sql->query($sql);
+            return true;
+        } catch (\JsonException $e) {
+        }
+        return false;
     }
 
-    public function getTopSongs(int $limit = -1, int $offset = -1, bool $downvotes = false): array
+    public function hasVoted(int $userid, bool $downvotes = false): bool
     {
-        $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
-        $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $sql = !$downvotes ? "SELECT * FROM `songs` ORDER BY `Upvotes` DESC" . $limitstring . $offsetstring : "SELECT * FROM `songs` ORDER BY `Downvotes` DESC" . $limitstring . $offsetstring;
-        $result = $this->sql->result($sql);
+        $votes = ($downvotes ? $this->get()["downvotes"] : $this->get()["upvotes"]) ?? array();
+        return array_key_exists($userid, $votes);
+    }
+
+    public function getTopSongs(int $limit = -1, int $offset = -1): array
+    {
+        $result = $this->sql->result("SELECT * FROM `songs`" . ($limit === -1 ? "" : " LIMIT " . $limit) . ($offset === -1 ? "" : " OFFSET " . $offset));
         $a = array();
         foreach ($result as $row) {
             $a[$row["ID"]]["id"] = $row["ID"];
@@ -362,14 +401,16 @@ class song
             $a[$row["ID"]]["file"] = $row["Songfile"];
             try {
                 $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["ID"]]["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["ID"]]["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["upvotes"] = (int)($row["Upvotes"]);
-            $a[$row["ID"]]["downvotes"] = (int)$row["Downvotes"];
+            $a[$row["ID"]]["votes"] = count($a[$row["ID"]]["upvotes"] ?? array());
             $a[$row["ID"]]["active"] = (bool)$row["Active"];
         }
-        return $a;
+        return $this->main->arrsort($a, "votes");
     }
+
 
     #endregion
 
@@ -606,9 +647,15 @@ class charts
         $infos = $this->get()[$this->id];
         $votes = $infos["votes"] ?? array();
         if (array_key_exists($userid, $votes)) {
-            return count($votes[$userid]) > 3;
+            return count($votes[$userid]) >= 3;
         }
         return false;
+    }
+
+    public function getVotesfromUser(int $userid): array
+    {
+        $infos = $this->get()[$this->id];
+        return ($infos["votes"][$userid] ?? array());
     }
 
     public function changeActive(): bool
@@ -673,6 +720,25 @@ class charts
             }
         }
         return $ar;
+    }
+
+    public function isNewSong(int $songid): bool
+    {
+        $result = $this->sql->result("SELECT `SongIDs` FROM `charts`");
+        $contains = 0;
+        foreach($result as $row){
+            try {
+                $songids = json_decode($row["SongIDs"], true, 512, JSON_THROW_ON_ERROR);
+                if(in_array($songid, $songids, true)){
+                    $contains++;
+                    if($contains >= 2){
+                        return false;
+                    }
+                }
+            } catch (\JsonException $e) {
+            }
+        }
+        return true;
     }
 }
 

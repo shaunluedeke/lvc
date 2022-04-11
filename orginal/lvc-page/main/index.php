@@ -10,7 +10,8 @@ $main = new Main();
 $main->init();
 
 use wcf\system\WCF;
-$user = WCF::getUser()->userID!==0;
+$userid = WCF::getUser()->userID;
+$user = $userid!==0;
 
 $form = new Form();
 
@@ -27,7 +28,7 @@ echo($form->show());
 $form = new Form();
 
 //charts abfrage
-$charts = $main->getChart()->get(true);
+$charts = $main->getChart()->get();
 $chartsset = false;
 if(count($charts)> 0) {
 
@@ -43,14 +44,36 @@ if(count($charts)> 0) {
         </tr>
         </thead>
         <tbody>');
-
+    $active = [];
+    $deactive = [];
+    $i = 0;
+    $main->arrsort($charts,"id");
     foreach ($charts as $key => $value){
-        if($value["active"]){
-            $form->addText("<tr><td>".$value["id"]."</td><td>".date("d.m.Y",strtotime($value["startdate"]))."</td><td>".date("d.m.Y",strtotime($value["enddate"]))."</td>");
-            if($user){$form->addText("<td><a href='index.php?av&id=".$value["id"]."'>Abstimmen</a></td>");}
-            $form->addText("</tr>");
-            $chartsset=true;
+        if($value["active"] && !$main->getChart($key)->hasVoted($userid)){
+            $active[$key] = $value;
+        }else{
+            $deactive[$key] = $value;
         }
+    }
+    foreach($active as $key => $value){
+        if($i===0){
+            $form->addText('<tr><th colspan="4" scope="row">Neue Charts</th></tr>');
+            $i=1;
+        }
+        $form->addText("<tr><td>".$value["id"]."</td><td>".date("d.m.Y",strtotime($value["startdate"]))."</td><td>".date("d.m.Y",strtotime($value["enddate"]))."</td>");
+        if($user){$form->addText("<td><a href='index.php?av&id=".$value["id"]."'>Abstimmen</a></td>");}
+        $form->addText("</tr>");
+        $chartsset=true;
+    }
+    foreach($deactive as $key => $value){
+        if($i<=1){
+            $form->addText('<tr><th colspan="4" scope="row">Alte Charts</th></tr>');
+            $i=2;
+        }
+        $form->addText("<tr><td>".$value["id"]."</td><td>".date("d.m.Y",strtotime($value["startdate"]))."</td><td>".date("d.m.Y",strtotime($value["enddate"]))."</td>");
+        if($user){$form->addText("<td><a href='index.php?av&id=".$value["id"]."'>Abstimmung ansehen</a></td>");}
+        $form->addText("</tr>");
+        $chartsset=true;
     }
     $form->addText("</tbody></table>");
 }

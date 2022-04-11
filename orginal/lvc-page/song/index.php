@@ -4,7 +4,8 @@ use wcf\system\lvc\Main;
 use wcf\system\lvc\Form;
 
 use wcf\system\WCF;
-$user = WCF::getUser()->userID!==0;
+$userid = WCF::getUser()->userID;
+$user = $userid!==0;
 $main = new Main();
 
 $id = $_GET['id'] ?? 0;
@@ -19,11 +20,11 @@ if ($id !== 0) {
         }else {
             $action = $_GET['action'] ?? "";
             if ($action === "upvote" || $action === "downvote") {
-                $songs->addVote(1, ($action === "downvote"));
+                $songs->addVote($userid,1, ($action === "downvote"));
                 header("Location: index.php?song&id=$id");
             }
-            $d = $user ? '<p>Upvotes: <a href="index.php?song&id=' . $id . '&action=upvote"><ion-icon name="thumbs-up-outline"></ion-icon>' . $info["upvotes"] . '</a></p><br>
-                   <p>Downvotes: <a href="index.php?song&id=' . $id . '&action=downvote"><ion-icon name="thumbs-down-outline"></ion-icon>' . $info["downvotes"] . '</a></p><br>' :
+            $d = $user ? '<p>Upvotes: <a href="index.php?song&id=' . $id . '&action=upvote" ><ion-icon name="thumbs-up-sharp" '.($songs->hasVoted($userid,false) ? 'style="color: #03e3fc" alt="Bereits Geliket"' : 'alt="Noch nicht Geliket"').'></ion-icon>' . count($info["upvotes"] ?? array()) . '</a></p><br>
+                   <p>Downvotes: <a href="index.php?song&id=' . $id . '&action=downvote"><ion-icon name="thumbs-down-sharp" '.($songs->hasVoted($userid,true) ? 'style="color: #03e3fc" alt="Bereits Disliked"' : 'alt="Noch nicht Disliked"').'></ion-icon>' . count($info["downvotes"]?? array()) . '</a></p><br>' :
                 '<p>Upvotes: ' . $info["upvotes"] . '</p><br>' . '<p>Downvotes: ' . $info["downvotes"] . '</p><br>';
             $form->addTitle("Song: " . Main::addSymbol($info["name"]));
             $infotext = $info["info"]["infotxt"] === "" ? "" : '<li>Info Text: ' . Main::addSymbol($info["info"]["infotxt"]) . '</li>';
