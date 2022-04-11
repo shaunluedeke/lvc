@@ -125,7 +125,8 @@ if (count($chart->get()) < 1) {
             }
             $form->addText("</tbody></table><br><br>");
             $form->addButton("Abstimmen", "button", "av/$id");
-        } else if ($active && $voted) {
+        }
+        else if ($active && $voted) {
             $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
            data-search="false">
         <thead>

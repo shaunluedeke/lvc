@@ -87,11 +87,20 @@ echo($form->show());
 
 $form = new Form();
 $form->addTitle("Sendetermine");
-$form->addText('Die Erstausstrahlung ist jeden zweiten Freitag im Monat ab 20:00 Uhr auf
-<a href="https://www.ohrfunk.de" target="_blank">www.ohrfunk.de</a>.<br>
-Die Wiederholung läuft hier am darauffolgenden Samstag um 10:00 Uhr.<br>
-Bei MFC
-<a href="https://www.music-fans.club" target="_blank">www.music-fans.club</a>
-könnt ihr die Low Vision Charts an jedem zweiten, dritten und vierten Sonntag ab 15:00 Uhr und
-mittwochs ab 09:00 Uhr hören.');
+$form->addText('
+Jeden 2 Freitag um 20:00 Uhr, ohrfunk.de<br>
+
+Jeden 2. Samstag, 10:00 Uhr, ohrfunk.de<br>
+
+Jeden 2. Sonntag, 15:00 Uhr, MFC Radio<br>
+
+Jeden 2. Mittwoch, 9:00 Uhr, MFC Radio<br>
+
+Jeden 3. Sonntag, 15:00 Uhr, MFC Radio<br>
+
+Jeden 3. Mittwoch, 9:00 Uhr, MFC Radio<br>
+
+Jeden 4. Sonntag, 15:00 Uhr, MFC Radio<br>
+
+Jeden 4. Mittwoch, 9:00 Uhr, MFC Radio<br>');
 echo($form->show());
