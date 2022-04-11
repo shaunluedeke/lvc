@@ -53,6 +53,14 @@ class Main
         return new readText($file);
     }
 
+    public function getLog():Log{
+        return new Log();
+    }
+
+    public function getAPI($ip=""):API{
+        return new API($ip);
+    }
+
     public function init(): void
     {
         $this->sql->query("CREATE TABLE IF NOT EXISTS `history` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Date` VARCHAR(200) NOT NULL , `History` TEXT NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
@@ -61,6 +69,7 @@ class Main
         $this->sql->query("CREATE TABLE IF NOT EXISTS `charts` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `SongIDs` TEXT NOT NULL , `Votes` TEXT NOT NULL , `ENDDate` VARCHAR(200) NOT NULL , `StartDate` VARCHAR(200) NOT NULL ,`Active` BOOLEAN NOT NULL, PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
         $this->sql->query("CREATE TABLE IF NOT EXISTS `songlogs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Date` VARCHAR(200) NOT NULL ,`New` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
         $this->sql->query("CREATE TABLE IF NOT EXISTS `contest` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Name` VARCHAR(200) NOT NULL , `Users` TEXT NOT NULL , `StartingDate` VARCHAR(200) NOT NULL , `EndingDate` VARCHAR(200) NOT NULL , `Activ` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
+        $this->sql->query("CREATE TABLE IF NOT EXISTS `api` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `IP` VARCHAR(255) NOT NULL , `Permission` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
     }
 
     public static function removeSymbol(string $txt):string{
@@ -93,6 +102,43 @@ class Main
         }
         $array = $ret;
         return $array;
+    }
+}
+
+class Log{
+
+    private Discord $webhook;
+    public function __construct()
+    {
+        $this->webhook = new Discord();
+    }
+
+    public function alert(string $message,string $title=""):void{
+        $this->webhook->setTitle($title===""?"ALERT":$title);
+        $this->webhook->setTxt($message);
+        $this->webhook->setColor("fcba03");
+        $this->webhook->send();
+    }
+
+    public function danger(string $message,string $title=""):void{
+        $this->webhook->setTitle($title===""?"DANGER":$title);
+        $this->webhook->setTxt($message);
+        $this->webhook->setColor("FF0000");
+        $this->webhook->send();
+    }
+
+    public function info(string $message,string $title=""):void{
+        $this->webhook->setTitle($title===""?"INFO":$title);
+        $this->webhook->setTxt($message);
+        $this->webhook->setColor("03fcfc");
+        $this->webhook->send();
+    }
+
+    public function sucesse(string $message,string $title=""):void{
+        $this->webhook->setTitle($title===""?"SUCESSE":$title);
+        $this->webhook->setTxt($message);
+        $this->webhook->setColor("17fc03");
+        $this->webhook->send();
     }
 }
 
@@ -263,6 +309,7 @@ class song
         } catch (\JsonException $e) {
         }
         $this->id = $id;
+        $this->main->getLog()->sucesse("Der Song $name wurde erfolgreich hinzugefügt ID: $id", "Song Added");
         return $id;
     }
 
@@ -273,6 +320,7 @@ class song
         }
         $this->main->getLogs($this->id)->add();
         $this->sql->query("DELETE FROM `songs` WHERE `ID`='$this->id'");
+        $this->main->getLog()->danger("Der Song $this->id wurde erfolgreich entfernt", "Song Removed");
         return empty($this->get());
     }
 
@@ -297,6 +345,7 @@ class song
         } catch (\JsonException $e) {
         }
         $this->sql->query("UPDATE `songs` SET `Songname`='$name',`Songinfo`='$infostring',`Active`='$as' WHERE `ID`='$this->id'");
+        $this->main->getLog()->info("Der Song $this->id wurde erfolgreich geupdatet", "Song Updatet");
     }
 
     #endregion
@@ -561,6 +610,7 @@ class charts
         try {
             $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`, `Active`)" .
                 " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','0')");
+            $this->main->getLog()->sucesse("Die Charts mit der ID $id wurde hinzugefügt", "Charts Added");
             return $id;
         } catch (\JsonException $e) {
             return -1;
@@ -1091,4 +1141,81 @@ class readText
     }
 
 
+}
+
+class API{
+
+    private Main $main;
+    private string $ip;
+    private SQL $sql;
+
+    public function __construct(string $ip="")
+    {
+        $this->main = new Main();
+        $this->ip=$ip;
+        $this->sql = new SQL();
+    }
+
+    public function getIP():string
+    {
+        return $this->ip;
+    }
+
+    public function setIP(string $ip): void
+    {
+        $this->ip = $ip;
+    }
+
+    public function hasPermission(int $permission):bool{
+        $result = $this->sql->result("SELECT * FROM `api` WHERE `IP`='".$this->ip."'");
+        foreach ($result as $row){
+            if($row['Active']===1 && $row['Permission']>=$permission){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function noPermission(int $permission):void{
+        $this->main->getLog()->danger("API: ".$this->ip." tried to access with permission ".$permission, "API");
+    }
+
+    public function add($ip,$permission):void{
+        $this->sql->query("INSERT INTO `api` (`IP`, `Permission`,`Active`) VALUES ('".$ip."', '".$permission."','1')");
+    }
+
+    public function remove():void{
+        $this->sql->query("DELETE FROM `api` WHERE `IP`='".$this->ip."'");
+    }
+
+    public function update($permission):void{
+        $this->sql->query("UPDATE `api` SET `Permission`='".$permission."' WHERE `IP`='".$this->ip."'");
+    }
+
+    public function updateActive(int $active):void{
+        $this->sql->query("UPDATE `api` SET `Active`='".$active."' WHERE `IP`='".$this->ip."'");
+    }
+
+    public function get():array{
+        $result = $this->sql->result("SELECT * FROM `api`".($this->ip===""?"":" WHERE `IP`='".$this->ip."'"));
+        $data = array();
+        if($this->ip==="") {
+            foreach ($result as $row) {
+                $data[$row["ID"]] = array(
+                    "IP" => $row['IP'],
+                    "Permission" => (int)$row['Permission'],
+                    "Active" => (bool)$row['Active']
+                );
+            }
+        }else{
+            foreach ($result as $row) {
+                $data = array(
+                    "IP" => $row['IP'],
+                    "Permission" => (int)$row['Permission'],
+                    "Active" => (bool)$row['Active']
+                );
+            }
+        }
+        return $data;
+    }
 }

@@ -14,6 +14,49 @@ $id = (int)($_GET["id"] ?? 0);
 $main = new Main();
 
 switch ($page) {
+
+    case "api":{
+        $ip = $_GET['ip'] ?? "";
+        $api = $main->getAPI($ip);
+        $apiget = $api->get();
+        $action = $_GET['action'] ?? "";
+        if($action === "delete"){
+            $api->remove();
+            header("Location: index.php?page=api");
+        }
+        if($action === "add" || count($apiget)<1) {
+            $form->addTitle("Add API");
+            $form->addInput("IP", "", "ip","",true);
+            $form->addNumber("Permission", "", "permission", 0, 1,0,10,true);
+            $form->addButton("Absenden", "button", "apiadd");
+            echo($form->show());
+            break;
+        }
+        if($ip === ""){
+            $form->addTitle("API List");
+            $form->addTableHeader(["ID", "IP", "Permission", "Active",""]);
+            foreach ($apiget as $key => $value) {
+                $form->addTableRow([$key, $value["IP"], $value["Permission"],$value["Active"]?"Ja":"Nein",'<a href="index.php?admin&page=api&ip='.$value["IP"].'">Aufrufen</a>'],true);
+            }
+            $form->addTableFooter();
+            $form->addText("<br><br><a href='index.php?admin&page=api&action=add'>Add</a><br><br><a href='index.php?admin'>Zurück</a>");
+            echo($form->show());
+            break;
+        }
+        else{
+            $form->addTitle("API: ".$ip);
+            $form->addInput("IP", "", "ip",$ip,true,true);
+            $form->addNumber("Permission", "", "permission", $apiget["Permission"], 1,0,10,true);
+            $form->addNumber("Active", "", "active", (int)$apiget["Active"], 1,0,1,true);
+            $form->addButton("Absenden", "button", "apiupdate");
+            $form->addText("<br><br><a href='index.php?admin&page=api&action=delete&ip=$ip'>Remove</a><br><br><a href='index.php?admin&page=api'>Zurück</a>");
+            echo($form->show());
+            break;
+        }
+
+        break;
+    }
+
     case "newsongs":
     {
         $form = new Form();
@@ -331,6 +374,10 @@ switch ($page) {
         $form = new Form();
         $form->addTitle("Admin Site | Neue Songs");
         $form->addText("<a href='index.php?admin&page=newsongs' class='btm btn-primary'>Song aufrufen</a>");
+        echo($form->show());
+        $form = new Form();
+        $form->addTitle("Admin Site | API");
+        $form->addText("<a href='index.php?admin&page=api' class='btm btn-primary'>API aufrufen</a>");
         echo($form->show());
         break;
     }

@@ -2,8 +2,6 @@
 
 namespace wcf\system\lvc;
 
-use wcf\system\lvc\Main;
-
 class Forwarding
 {
 
@@ -186,5 +184,19 @@ class Forwarding
             $song->accept();
         }
         return "index.php?admin&page=newsong";
+    }
+
+    public function addAPI(array $data):string
+    {
+        $this->main->getAPI()->add($data["ip"], $data["permission"]);
+        return "index.php?admin&page=api";
+    }
+
+    public function updateAPI(array $data):string
+    {
+        $api = $this->main->getAPI($data["ip"]);
+        $api->update($data["permission"]);
+        $api->updateActive($data["active"]);
+        return "index.php?admin&page=api";
     }
 }

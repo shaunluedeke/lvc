@@ -109,6 +109,16 @@ switch ($type) {
         break;
     }
 
+    case "apiadd":{
+        $http_refere = $forward->addAPI($data);
+        break;
+    }
+
+    case "apiupdate":{
+        $http_refere = $forward->updateAPI($data);
+        break;
+    }
+
 }
 if($debug){
     echo("</pre><br>Return value: ".$http_refere);

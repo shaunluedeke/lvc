@@ -10,6 +10,7 @@ class Form
     private string $style = "";
     private string $method = "post";
 
+    #region Text
     public function setUrl(string $url): void
     {
         $this->url = $url;
@@ -25,6 +26,15 @@ class Form
 
         $this->lastTitle = $title;
         $this->lastnum = 0;
+    }
+
+    public function addText($text): void
+    {
+
+        $this->vars[$this->lastTitle][$this->lastnum]["art"] = "text";
+        $this->vars[$this->lastTitle][$this->lastnum]["id"] = "";
+        $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
+        $this->lastnum++;
     }
 
     public function setMethod($method): void
@@ -43,6 +53,39 @@ class Form
         $this->vars[$this->lastTitle][$this->lastnum - 1]["extra"] = $style;
     }
 
+    #endregion Text
+
+    #region Table
+
+    public function addTableHeader($value,$style="",$extra=""): void
+    {
+
+        $this->vars[$this->lastTitle][$this->lastnum]["art"] = "tableheader";
+        $this->vars[$this->lastTitle][$this->lastnum]["value"] = $value;
+        $this->vars[$this->lastTitle][$this->lastnum]["style"] = $style;
+        $this->vars[$this->lastTitle][$this->lastnum]["extra"] = $extra;
+        $this->lastnum++;
+    }
+
+    public function addTableRow($value,bool $value2=false): void
+    {
+
+        $this->vars[$this->lastTitle][$this->lastnum]["art"] = "tablerow";
+        $this->vars[$this->lastTitle][$this->lastnum]["value"] = $value;
+        $this->vars[$this->lastTitle][$this->lastnum]["value2"] = $value2;
+        $this->lastnum++;
+    }
+
+    public function addTableFooter(): void
+    {
+        $this->vars[$this->lastTitle][$this->lastnum]["art"] = "tablefooter";
+        $this->lastnum++;
+    }
+
+    #endregion Table
+
+    #region Input
+
     public function addTextarea($title, $text, $id, $value = "",bool $require=false): void
     {
 
@@ -54,7 +97,6 @@ class Form
         $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
         $this->lastnum++;
     }
-
 
     public function addSelect($title, $text, $id, $args, bool $require = false,bool $multi = false): void
     {
@@ -98,7 +140,7 @@ class Form
         $this->lastnum++;
     }
 
-    public function addInput($title, $text, $id, $value = "",bool $require=false): void
+    public function addInput($title, $text, $id, $value = "",bool $require=false,bool $readonly=false): void
     {
 
         $this->vars[$this->lastTitle][$this->lastnum]["art"] = "input";
@@ -107,6 +149,7 @@ class Form
         $this->vars[$this->lastTitle][$this->lastnum]["value"] = $value;
         $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
         $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
+        $this->vars[$this->lastTitle][$this->lastnum]["readonly"] = $readonly;
         $this->lastnum++;
     }
 
@@ -208,17 +251,6 @@ class Form
         $this->lastnum++;
     }
 
-
-    public function addText($text): void
-    {
-
-        $this->vars[$this->lastTitle][$this->lastnum]["art"] = "text";
-        $this->vars[$this->lastTitle][$this->lastnum]["id"] = "";
-        $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
-        $this->lastnum++;
-    }
-
-
     public function addCalender($title,$text,$id): void
     {
 
@@ -249,6 +281,7 @@ class Form
         $this->lastnum++;
     }
 
+    #endregion Input
 
     public function show(): string
     {
@@ -270,6 +303,29 @@ class Form
                 }
                 if (isset($var["extra"])) {
                     $extra = ' ' . $var["extra"] . ' ';
+                }
+
+                if($var["art"] === "tableheader"){
+                    $r .= '<table id="Table" class="table table-striped" data-toggle="table"'.$style.'><thead><tr> ';
+                    foreach ($var["value"] as $vheader) {
+                        $r .= '<th scope="col"'.$extra.'>'.$vheader.'</th>';
+                    }
+                    $r .= '</tr></thead><tbody>';
+                }
+                if($var["art"] === "tablerow"){
+                    $i =0;
+                    $r .= '<tr>';
+                    foreach ($var["value"] as $vheader) {
+                        if($var["value2"] && $i === 0) {
+                            $r .= '<th scope="row"' . $extra . '>' . $vheader . '</th>';$i=1;
+                        }else {
+                            $r .= '<td' . $extra . '>' . $vheader . '</td>';
+                        }
+                    }
+                    $r .= '</tr>';
+                }
+                if($var["art"] === "tablefooter"){
+                    $r .= '</tbody></table>';
                 }
 
 
@@ -310,14 +366,12 @@ class Form
                 }
 
 
-
-
                 $required = ($var["require"] ?? false) ? "required" : "";
                 $readonly = ($var["readonly"] ?? false) ? "readonly" : "";
 
                 if ($var["art"] === "input") {
 
-                    $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="text" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
+                    $r .= '<input ' . $style . ' ' . $extra . ' '.$readonly. ' '.$required.' type="text" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "password") {
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="password" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "upload") {
