@@ -61,6 +61,10 @@ class Main
         return new API($ip);
     }
 
+    public function getBrodcastdate():brodcastdates{
+        return new brodcastdates();
+    }
+
     public function init(): void
     {
         $this->sql->query("CREATE TABLE IF NOT EXISTS `history` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Date` VARCHAR(200) NOT NULL , `History` TEXT NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
@@ -70,6 +74,7 @@ class Main
         $this->sql->query("CREATE TABLE IF NOT EXISTS `songlogs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Date` VARCHAR(200) NOT NULL ,`New` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
         $this->sql->query("CREATE TABLE IF NOT EXISTS `contest` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Name` VARCHAR(200) NOT NULL , `Users` TEXT NOT NULL , `StartingDate` VARCHAR(200) NOT NULL , `EndingDate` VARCHAR(200) NOT NULL , `Activ` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
         $this->sql->query("CREATE TABLE IF NOT EXISTS `api` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `IP` VARCHAR(255) NOT NULL , `Permission` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
+        $this->sql->query("CREATE TABLE IF NOT EXISTS `broadcastdate` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Weekday` INT(10) NOT NULL , `Delay` INT(10) NOT NULL , `Time` VARCHAR(200), `Link` VARCHAR(200) NOT NULL , `Name` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
     }
 
     public static function removeSymbol(string $txt):string{
@@ -87,6 +92,21 @@ class Main
     {
         return str_replace(array("ä", "ü", "ö", "Ä", "Ü", "Ö", "ß", "´","§","&", "'"),
             array("", "", "", "", "", "", "", "","","",""), $txt);
+    }
+
+    public function aasort (&$array, $key):array {
+        $sorter = array();
+        $ret = array();
+        reset($array);
+        foreach ($array as $ii => $va) {
+            $sorter[$ii] = $va[$key];
+        }
+        asort($sorter, SORT_NUMERIC);
+        foreach ($sorter as $ii => $va) {
+            $ret[$ii] = $array[$ii];
+        }
+        $array = $ret;
+        return $array;
     }
 
     public function arrsort (&$array, $key):array {
@@ -1218,4 +1238,270 @@ class API{
         }
         return $data;
     }
+}
+
+class brodcastdates{
+
+    private SQL $sql;
+    private Main $main;
+    private array $date;
+
+    public function __construct()
+    {
+        $this->main = new Main();
+        $this->sql = new SQL();
+        $this->date = explode("/",date("N/W/n/H:i"));
+    }
+
+    public function getNextDate():int{
+        $returnvalue = 0;
+        $weekday = (int)$this->date[0];
+        $weekofthemonth = $this->getWeekofMonth();
+
+        $hour = (int)explode(":", $this->date[3])[0];
+        $min = (int)explode(":", $this->date[3])[1];
+        $minend = $min+30;
+
+        $data = [];
+        $result = $this->sql->result("SELECT `ID`,`Weekday`,`Delay`,`Time` FROM `broadcastdate`");
+
+        foreach ($result as $row){
+            $data[$row['ID']] = array(
+                "Weekday" => (int)$row['Weekday'],
+                "Delay" => (int)$row['Delay'],
+                "Hour" => (int)explode(":", $row['Time'])[0],
+                "Min" => (int)explode(":", $row['Time'])[1]
+            );
+        }
+
+        foreach ($data as $key => $value){
+            if($weekofthemonth > $value['Delay']){
+                unset($data[$key]);
+            }
+            if($weekday > $value['Weekday']){
+                unset($data[$key]);
+            }
+            if($weekday === $value['Weekday'] && $weekofthemonth === $value['Delay']){
+                if($hour > $value['Hour']){
+                    unset($data[$key]);
+                }else if($hour === $value['Hour'] && $minend > $value['Min']){
+                    unset($data[$key]);
+                }
+            }
+        }
+        $data = $this->main->aasort($data, "Delay");
+
+        $month=[];
+        foreach ($data as $key => $value){
+            if(count($month)!==0 && !in_array($value['Delay'], $month, true)){
+                unset($data[$key]);
+            }else if(count($month)===0){
+                $month[] = $value['Delay'];
+            }
+        }
+        $month = [];
+        $data = $this->main->aasort($data, "Weekday");
+        foreach ($data as $key => $value){
+            if(count($month)!==0 && !in_array($value['Weekday'], $month, true)){
+                unset($data[$key]);
+            }else if(count($month)===0){
+                $month[] = $value['Weekday'];
+            }
+        }
+
+        $data = $this->main->arrsort($data, "Hour");
+        foreach ($data as $key => $value){
+            $returnvalue = $key;
+        }
+
+
+        if($returnvalue===0){
+            $data = [];
+            $result = $this->sql->result("SELECT `ID`,`Weekday`,`Delay`,`Time` FROM `broadcastdate`");
+
+            foreach ($result as $row){
+                $data[$row['ID']] = array(
+                    "Weekday" => (int)$row['Weekday'],
+                    "Delay" => (int)$row['Delay'],
+                    "Hour" => (int)explode(":", $row['Time'])[0],
+                    "Min" => (int)explode(":", $row['Time'])[1]
+                );
+            }
+            foreach ($data as $key => $value){
+                if(count($month)!==0 && !in_array($value['Delay'], $month, true)){
+                    unset($data[$key]);
+                }else if(count($month)===0){
+                    $month[] = $value['Delay'];
+                }
+            }
+            $data = $this->main->arrsort($data, "Weekday");
+            foreach ($data as $key => $value){
+                $returnvalue = $key;
+            }
+        }
+
+        return $returnvalue;
+    }
+
+    public function get(int $id = 0):array{
+        $data = [];
+        $result = $this->sql->result("SELECT * FROM `broadcastdate`".($id===0?"":" WHERE `ID`='".$id."'"));
+        foreach ($result as $row){
+            $data[$row['ID']] = array(
+                "Weekday" => (int)$row['Weekday'],
+                "Delay" => (int)$row['Delay'],
+                "Time" => $row['Time'],
+                "Link" => $row['Link'],
+                "Name" => $row['Name']
+            );
+        }
+        return $data;
+    }
+
+    public function getMonthfromWeek():int{
+        $weeknumber = $this->date[1];
+        $week=[
+                "1" => "1",
+                "2" => "1",
+                "3" => "1",
+                "4" => "1",
+                "5" => "1",
+                "6" => "2",
+                "7" => "2",
+                "8" => "2",
+                "9" => "2",
+                "10" => "3",
+                "11" => "3",
+                "12" => "3",
+                "13" => "3",
+                "14" => "3",
+                "15" => "4",
+                "16" => "4",
+                "17" => "4",
+                "18" => "4",
+                "19" => "5",
+                "20" => "5",
+                "21" => "5",
+                "22" => "5",
+                "23" => "5",
+                "24" => "6",
+                "25" => "6",
+                "26" => "6",
+                "27" => "6",
+                "28" => "7",
+                "29" => "7",
+                "30" => "7",
+                "31" => "7",
+                "32" => "7",
+                "33" => "8",
+                "34" => "8",
+                "35" => "8",
+                "36" => "8",
+                "37" => "9",
+                "38" => "9",
+                "39" => "9",
+                "40" => "9",
+                "41" => "9",
+                "42" => "10",
+                "43" => "10",
+                "44" => "10",
+                "45" => "10",
+                "46" => "11",
+                "47" => "11",
+                "48" => "11",
+                "49" => "11",
+                "50" => "11",
+                "51" => "12",
+                "52" => "12",
+                "53" => "12",
+                "54" => "12"
+        ];
+        return (int)$week[$weeknumber];
+    }
+
+    public function getWeekofMonth():int
+    {
+        $weeknumber = $this->date[1];
+        $week=[
+            "1" => "1",
+            "2" => "2",
+            "3" => "3",
+            "4" => "4",
+            "5" => "5",
+            "6" => "1",
+            "7" => "2",
+            "8" => "3",
+            "9" => "4",
+            "10" => "1",
+            "11" => "2",
+            "12" => "3",
+            "13" => "4",
+            "14" => "5",
+            "15" => "1",
+            "16" => "2",
+            "17" => "3",
+            "18" => "4",
+            "19" => "1",
+            "20" => "2",
+            "21" => "3",
+            "22" => "4",
+            "23" => "5",
+            "24" => "1",
+            "25" => "2",
+            "26" => "3",
+            "27" => "4",
+            "28" => "1",
+            "29" => "2",
+            "30" => "3",
+            "31" => "4",
+            "32" => "5",
+            "33" => "1",
+            "34" => "2",
+            "35" => "3",
+            "36" => "4",
+            "37" => "1",
+            "38" => "2",
+            "39" => "3",
+            "40" => "4",
+            "41" => "5",
+            "42" => "1",
+            "43" => "2",
+            "44" => "3",
+            "45" => "4",
+            "46" => "1",
+            "47" => "2",
+            "48" => "3",
+            "49" => "4",
+            "50" => "5",
+            "51" => "1",
+            "52" => "2",
+            "53" => "3",
+            "54" => "4"
+        ];
+        return (int)$week[$weeknumber];
+    }
+
+    public function getDayofInt($int = "1"):string
+    {
+        $day = [
+            "1" => "Montag",
+            "2" => "Dienstag",
+            "3" => "Mittwoch",
+            "4" => "Donnerstag",
+            "5" => "Freitag",
+            "6" => "Samstag",
+            "7" => "Sonntag"
+        ];
+        return $day[$int];
+    }
+
+    public function addDate($weekday, $delay, $time, $link, $name):void
+    {
+        $this->sql->query("INSERT INTO `broadcastdate`(`Weekday`, `Delay`, `Time`, `Link`, `Name`) VALUES ('$weekday','$delay','$time','$link','$name')");
+    }
+
+    public function removeDate(int $id):void{
+        $this->sql->query("DELETE FROM `broadcastdate` WHERE `ID` = '$id'");
+    }
+
 }

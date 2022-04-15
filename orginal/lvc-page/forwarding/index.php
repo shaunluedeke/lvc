@@ -119,6 +119,11 @@ switch ($type) {
         break;
     }
 
+    case "bcdadd":{
+        $http_refere = $forward->addBCD($data);
+        break;
+    }
+
 }
 if($debug){
     echo("</pre><br>Return value: ".$http_refere);

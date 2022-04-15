@@ -153,6 +153,19 @@ class Form
         $this->lastnum++;
     }
 
+    public function addURL($title, $text, $id, $value = "",bool $require=false,bool $readonly=false): void
+    {
+
+        $this->vars[$this->lastTitle][$this->lastnum]["art"] = "url";
+        $this->vars[$this->lastTitle][$this->lastnum]["title"] = $title;
+        $this->vars[$this->lastTitle][$this->lastnum]["text"] = $text;
+        $this->vars[$this->lastTitle][$this->lastnum]["value"] = $value;
+        $this->vars[$this->lastTitle][$this->lastnum]["id"] = $id;
+        $this->vars[$this->lastTitle][$this->lastnum]["require"] = $require;
+        $this->vars[$this->lastTitle][$this->lastnum]["readonly"] = $readonly;
+        $this->lastnum++;
+    }
+
     public function addPassword($title, $text, $id, $value = "",bool $require=false): void
     {
 
@@ -370,9 +383,10 @@ class Form
                 $readonly = ($var["readonly"] ?? false) ? "readonly" : "";
 
                 if ($var["art"] === "input") {
-
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$readonly. ' '.$required.' type="text" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
-                } else if ($var["art"] === "password") {
+                } else if ($var["art"] === "url") {
+                    $r .= '<input ' . $style . ' ' . $extra . ' '.$readonly. ' '.$required.' type="url" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
+                } elseif ($var["art"] === "password") {
                     $r .= '<input ' . $style . ' ' . $extra . ' '.$required.' type="password" id="' . $id . '" name="' . $id . '" value="' . $var["value"] . '" class="medium">';
                 } else if ($var["art"] === "upload") {
                     $type = ($var["type"] !== "*") ? 'accept="'.$var["type"].'"' : "";

@@ -15,39 +15,72 @@ $main = new Main();
 
 switch ($page) {
 
-    case "api":{
+    case "bcd":
+    {
+        $bcd = $main->getBrodcastdate();
+        $bcdget = $bcd->get($id);
+        $action = $_GET['action'] ?? "";
+        if ($action === "delete") {
+            $bcd->removeDate($id);
+            header("Location: index.php?admin&page=bcd");
+        }
+        if ($action === "add" || count($bcdget) < 1) {
+            $form->addTitle("Add Broadcast Date");
+            $form->addInput("Name", "Gebe den Name des Senders ein", "name", "", true);
+            $form->addURL("Link", "Gebe den Link des Senders ein", "link", "", true);
+            $form->addSelect("Wochentag", "", "weekday", ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"], true);
+            $form->addNumber("Woche im Monat", "", "delay", 0, 1, 1, 5, true);
+            $form->addInput("Gebe die Uhrzeit an (15:00)", "", "time", "", true);
+            $form->addButton("Absenden", "button", "bcdadd");
+            echo($form->show());
+            break;
+        }
+        $form->addTitle("Broadcast Date");
+        $form->addTableHeader(["Name", "Link", "Wochentag", "Woche im Monat","Uhrzeit", ""]);
+        foreach ($bcdget as $key => $value) {
+            $form->addTableRow([$value["Name"], "<a href='" . $value["Link"] . "' target='_blank'>" . $value["Link"] . "</a>", $bcd->getDayofInt($value["Weekday"]), $value["Delay"], $value["Time"], "<a href='index.php?admin&page=bcd&id=" . $key . "&action=delete'>Delete</a>"],true);
+        }
+        $form->addTableFooter();
+
+        $form->addText("<a href='index.php?admin&page=bcd&action=add'>Add Broadcast Date</a>");
+        echo($form->show());
+
+        break;
+    }
+
+    case "api":
+    {
         $ip = $_GET['ip'] ?? "";
         $api = $main->getAPI($ip);
         $apiget = $api->get();
         $action = $_GET['action'] ?? "";
-        if($action === "delete"){
+        if ($action === "delete") {
             $api->remove();
-            header("Location: index.php?page=api");
+            header("Location: index.php?admin&page=api");
         }
-        if($action === "add" || count($apiget)<1) {
+        if ($action === "add" || count($apiget) < 1) {
             $form->addTitle("Add API");
-            $form->addInput("IP", "", "ip","",true);
-            $form->addNumber("Permission", "", "permission", 0, 1,0,10,true);
+            $form->addInput("IP", "", "ip", "", true);
+            $form->addNumber("Permission", "", "permission", 0, 1, 0, 10, true);
             $form->addButton("Absenden", "button", "apiadd");
             echo($form->show());
             break;
         }
-        if($ip === ""){
+        if ($ip === "") {
             $form->addTitle("API List");
-            $form->addTableHeader(["ID", "IP", "Permission", "Active",""]);
+            $form->addTableHeader(["ID", "IP", "Permission", "Active", ""]);
             foreach ($apiget as $key => $value) {
-                $form->addTableRow([$key, $value["IP"], $value["Permission"],$value["Active"]?"Ja":"Nein",'<a href="index.php?admin&page=api&ip='.$value["IP"].'">Aufrufen</a>'],true);
+                $form->addTableRow([$key, $value["IP"], $value["Permission"], $value["Active"] ? "Ja" : "Nein", '<a href="index.php?admin&page=api&ip=' . $value["IP"] . '">Aufrufen</a>'], true);
             }
             $form->addTableFooter();
             $form->addText("<br><br><a href='index.php?admin&page=api&action=add'>Add</a><br><br><a href='index.php?admin'>Zurück</a>");
             echo($form->show());
             break;
-        }
-        else{
-            $form->addTitle("API: ".$ip);
-            $form->addInput("IP", "", "ip",$ip,true,true);
-            $form->addNumber("Permission", "", "permission", $apiget["Permission"], 1,0,10,true);
-            $form->addNumber("Active", "", "active", (int)$apiget["Active"], 1,0,1,true);
+        } else {
+            $form->addTitle("API: " . $ip);
+            $form->addInput("IP", "", "ip", $ip, true, true);
+            $form->addNumber("Permission", "", "permission", $apiget["Permission"], 1, 0, 10, true);
+            $form->addNumber("Active", "", "active", (int)$apiget["Active"], 1, 0, 1, true);
             $form->addButton("Absenden", "button", "apiupdate");
             $form->addText("<br><br><a href='index.php?admin&page=api&action=delete&ip=$ip'>Remove</a><br><br><a href='index.php?admin&page=api'>Zurück</a>");
             echo($form->show());
@@ -378,6 +411,10 @@ switch ($page) {
         $form = new Form();
         $form->addTitle("Admin Site | API");
         $form->addText("<a href='index.php?admin&page=api' class='btm btn-primary'>API aufrufen</a>");
+        echo($form->show());
+        $form = new Form();
+        $form->addTitle("Admin Site | Brodcast Dates");
+        $form->addText("<a href='index.php?admin&page=bcd' class='btm btn-primary'>Brodcast Dates aufrufen</a>");
         echo($form->show());
         break;
     }

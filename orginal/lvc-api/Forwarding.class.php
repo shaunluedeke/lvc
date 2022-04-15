@@ -199,4 +199,33 @@ class Forwarding
         $api->updateActive($data["active"]);
         return "index.php?admin&page=api";
     }
+
+    public function addBCD(array $data):string
+    {
+        $dcb = $this->main->getBrodcastdate();
+        $weekday = 1;
+        switch ($data["weekday"] ?? "Mo") {
+            case "Di":
+                $weekday = 2;
+                break;
+            case "Mi":
+                $weekday = 3;
+                break;
+            case "Do":
+                $weekday = 4;
+                break;
+            case "Fr":
+                $weekday = 5;
+                break;
+            case "Sa":
+                $weekday = 6;
+                break;
+            case "So":
+                $weekday = 7;
+                break;
+        }
+
+        $dcb->addDate($weekday, $data["delay"],$data["time"], $data["link"], $data["name"]);
+        return "index.php?admin&page=bcd";
+    }
 }
