@@ -17,25 +17,15 @@ if (count($chart->get()) < 1) {
 } else {
     if ($id === 0) {
         $form->addTitle("Alle Charts");
-        $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="false"
-           data-search="false">
-        <thead>
-        <tr>
-            <th scope="col" data-sortable="true" data-field="Akte">ID</th>
-            <th scope="col" data-sortable="true" data-field="name">Start Datum</th>
-            <th scope="col" data-sortable="true" data-field="port">End Datum</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>');
+        $form->addTableHeader(["ID","Start Datum","End Datum",""]);
 
         $active = [];
         $deactive = [];
         $i = 0;
         foreach ($chart->get() as $key => $value) {
-            if ($value["active"] && !$main->getChart($key)->hasVoted($userid)) {
+            if ($value["active"] && !$main->getChart($key)->isEnded() && $main->getChart($key)->isStarted() && !$main->getChart($key)->hasVoted($userid)) {
                 $active[$key] = $value;
-            } else {
+            } else if ($main->getChart($key)->isStarted() || $main->getChart($key)->isEnded()) {
                 $deactive[$key] = $value;
             }
         }
@@ -63,7 +53,7 @@ if (count($chart->get()) < 1) {
             $form->addText("</tr>");
             $chartsset = true;
         }
-        $form->addText("</tbody></table>");
+        $form->addTableFooter();
     }
 
     if ($id !== 0) {
@@ -72,7 +62,18 @@ if (count($chart->get()) < 1) {
         switch ($status) {
             case "error":
                 $form->addTitle("Fehler");
-                $form->addText("<p>Es ist ein Fehler aufgetreten. Bitte versuche es erneut.</p>");
+                $error = (int)($_GET["error"] ?? 103);
+                switch ($error) {
+                    case 101:
+                        $form->addText("<p>Es ist ein Fehler aufgetreten. Sie haben zwei oder mehreren Songs die gleiche Platzierung gegeben.</p>");
+                        break;
+                    case 102:
+                        $form->addText("<p>Es ist ein Fehler aufgetreten. Sie müssen für drei Songs abstimmen.</p>");
+                        break;
+                    default:
+                        $form->addText("<p>Es ist ein Fehler aufgetreten. Bitte versuche sie es später erneut.</p>");
+                        break;
+                }
                 echo($form->show());
                 $form = new Form();
                 break;
@@ -86,10 +87,15 @@ if (count($chart->get()) < 1) {
         }
 
         $form->addTitle("Charts");
-        $active = ($chart->get()[$id]["active"] ?? false);
+        $active = ($chart->get()[$id]["active"] && $chart->isStarted() && !$chart->isEnded());
         if (!$active) {
-            $form->addText('<div class="alert alert-danger" role="alert">Dieser Chart ist nicht aktiv!</div>');
-            $form->addText('Die Charts wurden am ' . date("d.m.Y", strtotime($chart->get()[$id]["enddate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["enddate"])) . ' automatisch geschlossen.<br><br>');
+            if ($chart->isEnded()) {
+                $form->addText('Die Charts wurden am ' . date("d.m.Y", strtotime($chart->get()[$id]["enddate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["enddate"])) . ' automatisch geschlossen.<br><br>');
+            } else if (!$chart->isStarted()) {
+                $form->addText('Die Charts werden am ' . date("d.m.Y", strtotime($chart->get()[$id]["startdate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["startdate"])) . ' automatisch geöffnet.<br><br>');
+            } else {
+                $form->addText('Die Charts wurden manuel geschlossen.<br><br>');
+            }
         } else {
             $form->addText('Die Charts werden nach dem ' . date("d.m.Y", strtotime($chart->get()[$id]["enddate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["enddate"])) . ' automatisch geschlossen.<br><br>');
         }
@@ -98,18 +104,7 @@ if (count($chart->get()) < 1) {
         $form = new Form();
 
         if ($active && !$voted) {
-
-            $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true" data-search="false">
-            <thead>
-            <tr>
-                <th></th>
-                <th scope="col" data-sortable="true" data-field="name">Song Name</th>
-                <th scope="col" data-sortable="true" data-field="author">Song Author</th>
-                <th scope="col" data-sortable="true" data-field="song">Song</th>
-                <th scope="col" data-sortable="true" data-field="voting">Voting</th>
-            </tr>
-            </thead>
-            <tbody>');
+            $form->addTableHeader(["","Song Name", "Song Author","Song","Voting"]);
             $chartssongs = $chart->get();
             foreach ($chartssongs[$id]["songid"] as $value) {
                 $song = $main->getSong((int)$value);
@@ -117,16 +112,15 @@ if (count($chart->get()) < 1) {
                 $new = $chart->isNewSong($value);
                 $form->addText('<tr>
                                         <td style="width: 5%">' . ($new ? '<span class="badge badge-success">Neu</span>' : '') . '</td>
-                                        <td style="width: 20%">' . Main::addSymbol($info["name"]) . '</td>
-                                        <td style="width: 25%">' . Main::addSymbol($info["info"]["author"]) . '</td>
-                                        <td style="width: 35%"><audio controls><source src="' . $info["file"] . '" ></audio></td>
+                                        <td style="width: 30%">' . Main::addSymbol($info["name"]) . '</td>
+                                        <td style="width: 35%">' . Main::addSymbol($info["info"]["author"]) . '</td>
+                                        <td style="width: 15%"><a href="index.php?song&id='.$value.'&autoplay=1" target="_blank">Anhören</a></td>
                                         <td style="width: 15%"><input style="width: 100%" type="number" min="0" max="3" placeholder="Platz 1 bis 3" name="voting/' . $song->getId() . '"></td>
                                      </tr>');
             }
             $form->addText("</tbody></table><br><br>");
             $form->addButton("Abstimmen", "button", "av/$id");
-        }
-        else if ($active && $voted) {
+        } else if ($active && $voted) {
             $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
            data-search="false">
         <thead>
@@ -161,7 +155,7 @@ if (count($chart->get()) < 1) {
                                         <td style="width: 5%">' . ($new ? '<span class="badge badge-success">Neu</span>' : '') . '</td>
                                         <td style="width: 20%">' . Main::addSymbol($info["name"]) . '</td>
                                         <td style="width: 25%">' . Main::addSymbol($info["info"]["author"]) . '</td>
-                                        <td style="width: 35%"><audio controls><source src="' . $info["file"] . '" ></audio></td>
+                                        <td style="width: 35%"><a href="index.php?song&id='.$value.'&autoplay=1" target="_blank">Anhören</a></td>
                                      </tr>');
             }
             $form->addText("</tbody></table><br><br>");
@@ -191,7 +185,7 @@ if (count($chart->get()) < 1) {
                                         <td>' . ($new ? '<span class="badge badge-success">Neu</span>' : '') . '</td>
                                         <td>' . Main::addSymbol($info["name"]) . '</td>
                                         <td>' . Main::addSymbol($info["info"]["author"]) . '</td>
-                                        <td><audio controls><source src="' . $info["file"] . '" ></audio></td>
+                                        <td><a href="index.php?song&id='.$value.'&autoplay=1" target="_blank">Anhören</a></td>
                                     </tr>');
                 $place++;
             }

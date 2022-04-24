@@ -49,9 +49,9 @@ if(count($charts)> 0) {
     $i = 0;
     $main->arrsort($charts,"id");
     foreach ($charts as $key => $value){
-        if($value["active"] && !$main->getChart($key)->hasVoted($userid)){
+        if($value["active"] && !$main->getChart($key)->isEnded() && !$main->getChart($key)->hasVoted($userid)){
             $active[$key] = $value;
-        }else{
+        }else if($main->getChart($key)->isStarted() || $main->getChart($key)->isEnded()) {
             $deactive[$key] = $value;
         }
     }
@@ -86,8 +86,13 @@ if(!$chartsset) {
 echo($form->show());
 
 $form = new Form();
-$form->addTitle("Sendetermine");
-$form->addText('
+$form->addTitle("Nächster Sendetemin");
+$bcd = $main->getBrodcastdate();
+$nextid = $bcd->getNextDate();
+$bcdget = $bcd->get($nextid);
+$day = $bcd->getDayofInt($bcdget[$nextid]["Weekday"]);
+$form->addText($day ." um ".$bcdget[$nextid]["Time"]." Uhr wird die Sendung bei <a href='".$bcdget[$nextid]["Link"]."' target='_blank'>".$bcdget[$nextid]["Name"]."</a> stattfinden.");
+/*$form->addText('
 Jeden 2 Freitag um 20:00 Uhr, ohrfunk.de<br>
 
 Jeden 2. Samstag, 10:00 Uhr, ohrfunk.de<br>
@@ -102,5 +107,5 @@ Jeden 3. Mittwoch, 9:00 Uhr, MFC Radio<br>
 
 Jeden 4. Sonntag, 15:00 Uhr, MFC Radio<br>
 
-Jeden 4. Mittwoch, 9:00 Uhr, MFC Radio<br>');
+Jeden 4. Mittwoch, 9:00 Uhr, MFC Radio<br>');*/
 echo($form->show());

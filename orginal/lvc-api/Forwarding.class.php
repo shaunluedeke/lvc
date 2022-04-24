@@ -98,14 +98,26 @@ class Forwarding
         if ($id !== 0) {
             $charts = $this->main->getChart($id);
             if (count($charts->get()) > 0) {
+                $voteings = [];
                 foreach ($data as $key => $value) {
                     if (strpos($key, "voting/") === 0) {
                         $songid = (int)(explode("/", $key)[1] ?? 0);
                         if (($songid !== 0) && ((int)($value ?? 0) !== 0)) {
-                            $a = (int)$value === 3 ? 1 : $value;
-                            $value = (int)$value === 1 ? 3 : $a;
-                            $charts->addVote($songid, $userid, (int)$value);
+                            $value = ((int)$value === 1 ? 3 : ((int)$value === 3 ? 1 : $value));
+                            if(($voteings[$value] ?? 0) === 0){
+                                $voteings[$value] = $songid;
+                            }else{
+                                return "index.php?av&id=$id&status=error&error=101";
+                            }
                         }
+                    }
+                }
+                if(count($voteings)!==3){
+                    return "index.php?av&id=$id&status=error&error=102";
+                }
+                foreach ($voteings as $key => $value){
+                    if(!$charts->addVote($value, $userid, (int)$key)){
+                        return "index.php?av&id=$id&status=error&error=103";
                     }
                 }
             }

@@ -18,6 +18,7 @@ if ($id !== 0) {
             $form->addTitle("Song is not active");
             $form->addText('Please contact the admin to activate this song or choose another one.<br><br><a href="index.php?song">Back</a>');
         }else {
+            $autoplay = (int)($_GET['autoplay'] ?? 0);
             $action = $_GET['action'] ?? "";
             if ($action === "upvote" || $action === "downvote") {
                 $songs->addVote($userid,1, ($action === "downvote"));
@@ -28,8 +29,9 @@ if ($id !== 0) {
                 '<p>Upvotes: ' . $info["upvotes"] . '</p><br>' . '<p>Downvotes: ' . $info["downvotes"] . '</p><br>';
             $form->addTitle("Song: " . Main::addSymbol($info["name"]));
             $infotext = $info["info"]["infotxt"] === "" ? "" : '<li>Info Text: ' . Main::addSymbol($info["info"]["infotxt"]) . '</li>';
-            $form->addText(
-                '<audio controls><source src="' . $info["file"] . '" ></audio><br>
+            $audio = $autoplay === 0 ? '<audio controls><source src="' . $info["file"] . '" ></audio>' : '<audio controls autoplay><source src="' . $info["file"] . '" ></audio>';
+            $form->addText($audio.
+                '<br>
                    <p>Infos:</p><br><br>
                    <ul>
                       <li>Author: ' . Main::addSymbol($info["info"]["author"]) . '</li>

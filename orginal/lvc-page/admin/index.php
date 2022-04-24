@@ -279,33 +279,15 @@ switch ($page) {
                     $html = "";
                     $topsongs = $oldid === 0 ? ($main->getChart($id)->getTopSongs()) : $charts->getTopSongs();
                     arsort($topsongs);
-                    $html .= '<table class="table">
-                      <thead>
-                        <tr>
-                          <th scope="col">Platzierung</th>
-                          <th scope="col">Author</th>
-                          <th scope="col">Name</th>
-                          <th scope="col">Votes</th>
-                          <th scope="col"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                    ';
+                    $form->addTableHeader(["Platzierung","Author","Name","Votes",""]);
                     $platz = 1;
 
                     foreach ($topsongs as $key => $value) {
                         $songinfos = $main->getSong($key)->get();
-                        $html .= '
-                 <tr>
-                  <th scope="row">Platz ' . $platz . '</th>
-                  <td>' . Main::addSymbol($songinfos["info"]["author"]) . '</td>
-                  <td>' . Main::addSymbol($songinfos["name"]) . '</td>
-                  <td>' . $value . '</td>
-                  <td><a class="btn btn-primary" href="index.php?song&id=' . $key . '">Anhören</a></td>
-                </tr>
-                ';
+                        $form->addTableRow([$platz,Main::addSymbol($songinfos["info"]["author"]),Main::addSymbol($songinfos["name"]),$value,'<a class="btn btn-primary" href="index.php?song&id=' . $key . '">Anhören</a>'],true);
                         $platz++;
                     }
+                    $form->addTableFooter();
                 } catch (Exception $e) {
                 }
                 $html .= '</tbody></table><br><br><a class="btn-primary" href="index.php?admin&page=av&action=add">Neue Hinzufügen</a>';
@@ -317,27 +299,11 @@ switch ($page) {
             } else
                 if (count($cl) > 1) {
                     $form->addTitle("Abstimmungs Verwaltung");
-                    $html = '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-                    
-                     <table class="table">
-                      <thead>
-                        <tr>
-                          <th scope="col">ID</th>
-                          <th scope="col"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                    ';
+                    $form->addTableHeader(["ID",""]);
                     foreach ($cl as $key => $value) {
-                        $html .= '
-                         <tr>
-                          <th scope="row">' . $value["id"] . '</th>
-                          <td><a class="btn btn-primary" href="index.php?admin&page=av&id=' . $value["id"] . '">Aufrufen</a></td>
-                        </tr>
-                        ';
+                        $form->addTableRow([$value["id"],'<a class="btn btn-primary" href="index.php?admin&page=av&id=' . $value["id"] . '">Aufrufen</a>'],true);
                     }
-                    $html .= '</tbody></table><a class="btn-primary" href="index.php?admin&page=av&action=add">Neue Hinzufügen</a>';
-                    $form->addText($html);
+                    $form->addTableFooter();
                     echo($form->show());
                 }
 
@@ -353,8 +319,6 @@ switch ($page) {
             $form->addText("<h1>Vielen Dank für deine Stimme!</h1>");
             echo($form->show());
         }
-        $id = $_GET["id"] ?? 0;
-        $action = $_GET["action"] ?? "";
         $cl = $main->getChart($id)->get();
 
         if (count($cl) === 1) {
@@ -366,29 +330,28 @@ switch ($page) {
             }
             $chart = $main->getChart($id);
             $form = new Form();
-            $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
-           data-search="false">
-        <thead>
-        <tr>
-            <th scope="col" data-sortable="true" data-field="Akte">Song Name</th>
-            <th scope="col" data-sortable="true" data-field="Akte">Song Author</th>
-            <th scope="col" data-sortable="true" data-field="name">Song</th>
-            <th scope="col" data-sortable="true" data-field="port">Voting</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>');
+            $form->addTitle("Abstimmungen");
+            $form->addTableHeader(["Song Name","Song Author","Song","Voting"]);
 
-            foreach ($chart->get()["songid"] as $value) {
+            foreach ($chart->get()[$id]["songid"] as $value) {
                 $song = $main->getSong((int)$value);
                 $info = $song->get();
-                $form->addText('<tr><td>' . Main::addSymbol($info["name"]) . '</td><td>' . Main::addSymbol($info["info"]["author"]) . '</td><td><audio controls><source src="' . $info["file"] . '" ></audio></td>
-                                <td><input type="number" min="0" max="3" value="0" name="voting/' . $song->getId() . '"></td></tr>');
+                $form->addTableRow([Main::addSymbol($info["name"]),Main::addSymbol($info["info"]["author"]),'<audio controls><source src="' . $info["file"] . '" ></audio>','<input type="number" min="0" max="3" value="0" name="voting/' . $song->getId() . '">']);
             }
-            $form->addText("</tbody></table><br><br>");
+            $form->addTableFooter();
             $form->addButton("Abstimmen", "button", "avadmin/$id");
-            echo($form->show());
         }
+        else{
+            $form = new Form();
+            $form->addTitle("Abstimmungen");
+            $form->addTableHeader(["ID","Active",""]);
+            foreach ($cl as $key => $value){
+                $active = $value["active"] && (int)$value["autoset"] === 1;
+                $form->addTableRow([$value["id"],$active?"Aktive":"Deaktiveiert",'<a href="index.php?admin&page=av-vote&id='.$value["id"].'">Abstimmen</a>'],$active);
+            }
+            $form->addTableFooter();
+        }
+        echo($form->show());
         break;
     }
 
@@ -419,3 +382,4 @@ switch ($page) {
         break;
     }
 }
+?>

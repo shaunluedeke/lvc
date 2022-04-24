@@ -657,6 +657,7 @@ class charts
                 $a[$row["ID"]]["enddate"] = $row["ENDDate"];
                 $a[$row["ID"]]["startdate"] = $row["StartDate"];
                 $a[$row["ID"]]["active"] = (bool)$row["Active"];
+                $a[$row["ID"]]["autoset"] = (int)$row["AutoSet"];
             }
         return $a;
     }
@@ -737,18 +738,20 @@ class charts
         return false;
     }
 
-    public function getEnd(): int
+    public function isStarted(): bool
     {
-        $date1 = date_create_from_format('Y-m-d', $this->get()["enddate"]);
-        $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
-        return ((array)date_diff($date1, $date2))["days"];
+        if (!empty($this->get())) {
+            return (int)$this->get()[$this->id]["autoset"]===1;
+        }
+        return false;
     }
 
-    public function getStart(): int
+    public function isEnded(): bool
     {
-        $date1 = date_create_from_format('Y-m-d', $this->get()["startdate"]);
-        $date2 = date_create_from_format('Y-m-d', date('Y-m-d'));
-        return ((array)date_diff($date1, $date2))["days"];
+        if (!empty($this->get())) {
+            return (int)$this->get()[$this->id]["autoset"]===2;
+        }
+        return false;
     }
 
     public function getTopSongs(): array
@@ -1243,104 +1246,19 @@ class API{
 class brodcastdates{
 
     private SQL $sql;
-    private Main $main;
-    private array $date;
 
     public function __construct()
     {
-        $this->main = new Main();
         $this->sql = new SQL();
-        $this->date = explode("/",date("N/W/n/H:i"));
     }
 
     public function getNextDate():int{
-        $returnvalue = 0;
-        $weekday = (int)$this->date[0];
-        $weekofthemonth = $this->getWeekofMonth();
 
-        $hour = (int)explode(":", $this->date[3])[0];
-        $min = (int)explode(":", $this->date[3])[1];
-        $minend = $min+30;
-
-        $data = [];
-        $result = $this->sql->result("SELECT `ID`,`Weekday`,`Delay`,`Time` FROM `broadcastdate`");
-
+        $result = $this->sql->result("SELECT `ID` FROM `broadcastdate` WHERE `NEXT`='1'");
         foreach ($result as $row){
-            $data[$row['ID']] = array(
-                "Weekday" => (int)$row['Weekday'],
-                "Delay" => (int)$row['Delay'],
-                "Hour" => (int)explode(":", $row['Time'])[0],
-                "Min" => (int)explode(":", $row['Time'])[1]
-            );
+            return $row['ID'];
         }
-
-        foreach ($data as $key => $value){
-            if($weekofthemonth > $value['Delay']){
-                unset($data[$key]);
-            }
-            if($weekday > $value['Weekday']){
-                unset($data[$key]);
-            }
-            if($weekday === $value['Weekday'] && $weekofthemonth === $value['Delay']){
-                if($hour > $value['Hour']){
-                    unset($data[$key]);
-                }else if($hour === $value['Hour'] && $minend > $value['Min']){
-                    unset($data[$key]);
-                }
-            }
-        }
-        $data = $this->main->aasort($data, "Delay");
-
-        $month=[];
-        foreach ($data as $key => $value){
-            if(count($month)!==0 && !in_array($value['Delay'], $month, true)){
-                unset($data[$key]);
-            }else if(count($month)===0){
-                $month[] = $value['Delay'];
-            }
-        }
-        $month = [];
-        $data = $this->main->aasort($data, "Weekday");
-        foreach ($data as $key => $value){
-            if(count($month)!==0 && !in_array($value['Weekday'], $month, true)){
-                unset($data[$key]);
-            }else if(count($month)===0){
-                $month[] = $value['Weekday'];
-            }
-        }
-
-        $data = $this->main->arrsort($data, "Hour");
-        foreach ($data as $key => $value){
-            $returnvalue = $key;
-        }
-
-
-        if($returnvalue===0){
-            $data = [];
-            $result = $this->sql->result("SELECT `ID`,`Weekday`,`Delay`,`Time` FROM `broadcastdate`");
-
-            foreach ($result as $row){
-                $data[$row['ID']] = array(
-                    "Weekday" => (int)$row['Weekday'],
-                    "Delay" => (int)$row['Delay'],
-                    "Hour" => (int)explode(":", $row['Time'])[0],
-                    "Min" => (int)explode(":", $row['Time'])[1]
-                );
-            }
-            foreach ($data as $key => $value){
-                if(count($month)!==0 && !in_array($value['Delay'], $month, true)){
-                    unset($data[$key]);
-                }else if(count($month)===0){
-                    $month[] = $value['Delay'];
-                }
-            }
-            $data = $this->main->arrsort($data, "Weekday");
-            foreach ($data as $key => $value){
-                $returnvalue = $key;
-            }
-        }
-
-        return $returnvalue;
+        return 1;
     }
 
     public function get(int $id = 0):array{
@@ -1356,129 +1274,6 @@ class brodcastdates{
             );
         }
         return $data;
-    }
-
-    public function getMonthfromWeek():int{
-        $weeknumber = $this->date[1];
-        $week=[
-                "1" => "1",
-                "2" => "1",
-                "3" => "1",
-                "4" => "1",
-                "5" => "1",
-                "6" => "2",
-                "7" => "2",
-                "8" => "2",
-                "9" => "2",
-                "10" => "3",
-                "11" => "3",
-                "12" => "3",
-                "13" => "3",
-                "14" => "3",
-                "15" => "4",
-                "16" => "4",
-                "17" => "4",
-                "18" => "4",
-                "19" => "5",
-                "20" => "5",
-                "21" => "5",
-                "22" => "5",
-                "23" => "5",
-                "24" => "6",
-                "25" => "6",
-                "26" => "6",
-                "27" => "6",
-                "28" => "7",
-                "29" => "7",
-                "30" => "7",
-                "31" => "7",
-                "32" => "7",
-                "33" => "8",
-                "34" => "8",
-                "35" => "8",
-                "36" => "8",
-                "37" => "9",
-                "38" => "9",
-                "39" => "9",
-                "40" => "9",
-                "41" => "9",
-                "42" => "10",
-                "43" => "10",
-                "44" => "10",
-                "45" => "10",
-                "46" => "11",
-                "47" => "11",
-                "48" => "11",
-                "49" => "11",
-                "50" => "11",
-                "51" => "12",
-                "52" => "12",
-                "53" => "12",
-                "54" => "12"
-        ];
-        return (int)$week[$weeknumber];
-    }
-
-    public function getWeekofMonth():int
-    {
-        $weeknumber = $this->date[1];
-        $week=[
-            "1" => "1",
-            "2" => "2",
-            "3" => "3",
-            "4" => "4",
-            "5" => "5",
-            "6" => "1",
-            "7" => "2",
-            "8" => "3",
-            "9" => "4",
-            "10" => "1",
-            "11" => "2",
-            "12" => "3",
-            "13" => "4",
-            "14" => "5",
-            "15" => "1",
-            "16" => "2",
-            "17" => "3",
-            "18" => "4",
-            "19" => "1",
-            "20" => "2",
-            "21" => "3",
-            "22" => "4",
-            "23" => "5",
-            "24" => "1",
-            "25" => "2",
-            "26" => "3",
-            "27" => "4",
-            "28" => "1",
-            "29" => "2",
-            "30" => "3",
-            "31" => "4",
-            "32" => "5",
-            "33" => "1",
-            "34" => "2",
-            "35" => "3",
-            "36" => "4",
-            "37" => "1",
-            "38" => "2",
-            "39" => "3",
-            "40" => "4",
-            "41" => "5",
-            "42" => "1",
-            "43" => "2",
-            "44" => "3",
-            "45" => "4",
-            "46" => "1",
-            "47" => "2",
-            "48" => "3",
-            "49" => "4",
-            "50" => "5",
-            "51" => "1",
-            "52" => "2",
-            "53" => "3",
-            "54" => "4"
-        ];
-        return (int)$week[$weeknumber];
     }
 
     public function getDayofInt($int = "1"):string
