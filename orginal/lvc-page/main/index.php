@@ -54,7 +54,7 @@ if(count($charts)> 0) {
         }else if($main->getChart($key)->isStarted() || $main->getChart($key)->isEnded()) {
             $deactive[$key] = $value;
         }
-    }
+    } 
     foreach($active as $key => $value){
         if($i===0){
             $form->addText('<tr><th colspan="4" scope="row">Neue Charts</th></tr>');
