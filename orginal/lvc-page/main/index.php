@@ -13,6 +13,14 @@ use wcf\system\WCF;
 $userid = WCF::getUser()->userID;
 $user = $userid!==0;
 
+if(!$user){
+    $form = new Form();
+    $form->addTitle("Login");
+    $form->addText('Bitte Melden Sie sich an damit sie die Seite sehen können<br><br><a class="loginLink" href="https://lvcharts.de/wls/index.php?login/"><button class="btn-primary">Anmelden oder registrieren</button></a>');
+
+    echo($form->show());
+}
+
 $form = new Form();
 
 $form->addTitle("Herzlich willkommen bei den Low Vision Charts,<br>den Charts von Sehbehinderten für den Rest der Welt.");
@@ -54,7 +62,7 @@ if(count($charts)> 0) {
         }else if($main->getChart($key)->isStarted() || $main->getChart($key)->isEnded()) {
             $deactive[$key] = $value;
         }
-    } 
+    }
     foreach($active as $key => $value){
         if($i===0){
             $form->addText('<tr><th colspan="4" scope="row">Neue Charts</th></tr>');
@@ -71,7 +79,7 @@ if(count($charts)> 0) {
             $i=2;
         }
         $form->addText("<tr><td>".$value["id"]."</td><td>".date("d.m.Y",strtotime($value["startdate"]))."</td><td>".date("d.m.Y",strtotime($value["enddate"]))."</td>");
-        if($user){$form->addText("<td><a href='index.php?av&id=".$value["id"]."'>Abstimmung ansehen</a></td>");}
+        $form->addText("<td><a href='index.php?av&id=".$value["id"]."'>Abstimmung ansehen</a></td>");
         $form->addText("</tr>");
         $chartsset=true;
     }
