@@ -59,7 +59,6 @@ if ($id !== 0) {
         $form->addTitle("Song: " . $id);
         $form->addText('<h4>Der Song mit der ID gibt es nicht!</h4>');
     }
-    echo($form->show());
 
 }
 else{
@@ -116,7 +115,5 @@ else{
     ';
 
     $form->addText($html);
-    echo($form->show());
-    //$pagesel = new wcf\system\lvc\Pagenation($maxsite, $site, "index.php?song&page=");
-    //echo($pagesel->build());
 }
+echo($form->show());

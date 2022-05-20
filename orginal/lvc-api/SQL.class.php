@@ -14,6 +14,13 @@ class SQL{
         return $state->execute();
 
     }
+
+    public function queryID($sql){
+        $state = $this->sql->prepareStatement($sql);
+        $state->execute();
+        return $this->sql->lastInsertId();
+    }
+
     public function result($sql){
         $state = $this->sql->prepareStatement($sql);
         $state->execute();

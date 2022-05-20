@@ -16,9 +16,10 @@ if(!$api->hasPermission(1)){$api->noPermission(1);header('HTTP/1.0 403 Forbidden
 
 $data = [];
 
+
 switch($method){
-    case "GET":{if(!$api->hasPermission(1)){$api->noPermission(1);header('HTTP/1.0 403 Forbidden'); return;}$data = $_GET; break;}
-    case "POST":{if(!$api->hasPermission(1)){$api->noPermission(2);header('HTTP/1.0 403 Forbidden'); return;}$data = $_POST;break; }
+    case "GET":{$data = $_GET; if(($data["action"] ?? "") === "login"){break;} if(!$api->hasPermission(1)){$api->noPermission(1);header('HTTP/1.0 403 Forbidden'); return;} break;}
+    case "POST":{$data = $_POST; if(($data["action"] ?? "") === "login"){break;} if(!$api->hasPermission(1)){$api->noPermission(2);header('HTTP/1.0 403 Forbidden'); return;}break; }
     default:{header('HTTP/1.0 400 Bad Request'); return;}
 }
 
@@ -103,6 +104,29 @@ try {
                 default:{header('HTTP/1.0 400 Bad Request'); return;}
             }
             break;
+        }
+
+        case "login":{
+            $username = $data["username"] ?? "";
+            $password = base64_decode($data["password"]) ?? "";
+            try {
+                $user = wcf\system\user\authentication\UserAuthenticationFactory::getInstance()->getUserAuthentication()->loginManually($username, $password);
+                echo json_encode(["status" => "success", "userid" => $user->userID], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                return;
+            }catch (Exception $e){
+                if($e->getField() === "username"){
+                    try{
+                        $user = wcf\system\user\authentication\EmailUserAuthentication::getInstance()->getUserAuthentication()->loginManually($username, $password);
+                        echo json_encode(["status" => "success", "userid" => $user->userID], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                        return;
+                    }catch (Exception $e){
+                        echo json_encode(["status" => "error", "error" => "username"], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                        return;
+                    }
+                }
+                echo json_encode(["status" => "error", "error" => "password"], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                return;
+            }
         }
 
         default:

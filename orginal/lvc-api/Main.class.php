@@ -66,16 +66,7 @@ class Main
     }
 
     public function init(): void
-    {
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `history` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Date` VARCHAR(200) NOT NULL , `History` TEXT NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `songs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , `Comments` TEXT NOT NULL , `Upvotes` INT(16) NOT NULL , `Downvotes` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `newsongs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Songfile` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `charts` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `SongIDs` TEXT NOT NULL , `Votes` TEXT NOT NULL , `ENDDate` VARCHAR(200) NOT NULL , `StartDate` VARCHAR(200) NOT NULL ,`Active` BOOLEAN NOT NULL, PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `songlogs` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Songname` VARCHAR(200) NOT NULL , `Songinfo` TEXT NOT NULL , `Date` VARCHAR(200) NOT NULL ,`New` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `contest` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Name` VARCHAR(200) NOT NULL , `Users` TEXT NOT NULL , `StartingDate` VARCHAR(200) NOT NULL , `EndingDate` VARCHAR(200) NOT NULL , `Activ` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `api` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `IP` VARCHAR(255) NOT NULL , `Permission` INT(16) NOT NULL , `Active` BOOLEAN NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-        $this->sql->query("CREATE TABLE IF NOT EXISTS `broadcastdate` ( `ID` INT(16) NOT NULL AUTO_INCREMENT , `Weekday` INT(10) NOT NULL , `Delay` INT(10) NOT NULL , `Time` VARCHAR(200), `Link` VARCHAR(200) NOT NULL , `Name` VARCHAR(200) NOT NULL , PRIMARY KEY (`ID`)) ENGINE = InnoDB;");
-    }
+    {}
 
     public static function removeSymbol(string $txt):string{
         return str_replace(array("ä", "ü", "ö", "Ä", "Ü", "Ö", "ß", "´","§","&", "'"),
@@ -185,17 +176,17 @@ class history
 
     public function get(): array
     {
-        $result = $this->sql->result(($this->date === "" ? "SELECT `Date`,`History` FROM `history`":"SELECT `History` FROM `history` WHERE `Date`='$this->date'"));
+        $result = $this->sql->result(($this->date === "" ? "SELECT `created_at`,`content` FROM `histories`":"SELECT `content` FROM `histories` WHERE `created_at`='$this->date'"));
         $a = array();
         foreach (($result) as $row) {
-            if (!isset($row["Date"])) {
+            if (!isset($row["created_at"])) {
                 try {
-                    return json_decode($row["History"], true, 512, JSON_THROW_ON_ERROR);
+                    return json_decode($row["content"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
             }
             try {
-                $a[$row["Date"]] = json_decode($row["History"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["created_at"]] = json_decode($row["content"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
         }
@@ -204,19 +195,18 @@ class history
 
     public function add($data): void
     {
-        $this->date = ($this->date !== "" ? $this->date : date("d.m.Y"));
         $a = !is_array($data) ? $data : $this->get();
         if (!is_array($data)) {
             $a[] = $data;
         }
         if (empty($this->get())) {
             try {
-                $this->sql->query("INSERT INTO `history`(`ID`, `Date`, `History`) VALUES (null,'$this->date','" . json_encode($a, JSON_THROW_ON_ERROR) . "')");
+                $this->sql->query("INSERT INTO `histories`(`content`) VALUES ('" . json_encode($a, JSON_THROW_ON_ERROR) . "')");
             } catch (\JsonException $e) {
             }
         } else {
             try {
-                $this->sql->query("UPDATE `history` SET `History`='" . json_encode($a, JSON_THROW_ON_ERROR) . "' WHERE `Date`='" . $this->date . "'");
+                $this->sql->query("UPDATE `histories` SET `content`='" . json_encode($a, JSON_THROW_ON_ERROR) . "' WHERE `created_at`='" . $this->date . "'");
             } catch (\JsonException $e) {
             }
         }
@@ -250,43 +240,49 @@ class song
     #region Info
     public function get(): array
     {
-        $sql = $this->id === 0 ? "SELECT * FROM `songs`" : "SELECT * FROM `songs` WHERE `ID`='$this->id'";
+        $sql = $this->id === 0 ? "SELECT * FROM `songs`" : "SELECT * FROM `songs` WHERE `id`='$this->id'";
         $result = $this->sql->result($sql);
         $a = array();
         if ($this->id === 0) {
             foreach ($result as $row) {
-                $a[$row["ID"]]["id"] = $row["ID"];
-                $a[$row["ID"]]["name"] = Main::addSymbol($row["Songname"]);
+                $a[$row["id"]]["id"] = $row["id"];
+                $a[$row["id"]]["name"] = Main::addSymbol($row["name"]);
                 try {
-                    $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["info"] = json_decode($row["info"], true, 512, JSON_THROW_ON_ERROR);
+                    if(!isset($a[$row["id"]]["info"]["uploaddate"])){
+                        $a[$row["id"]]["info"]["uploaddate"] = $row["created_at"];
+                    }
                 } catch (\JsonException $e) {
                 }
-                $a[$row["ID"]]["file"] = $row["Songfile"];
+                $a[$row["id"]]["file"] = $row["file"];
                 try {
-                    $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
-                    $a[$row["ID"]]["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
-                    $a[$row["ID"]]["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["comments"] = json_decode($row["comments"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["upvotes"] = json_decode($row["likes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["downvotes"] = json_decode($row["dislikes"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
 
-                $a[$row["ID"]]["active"] = (bool)$row["Active"];
+                $a[$row["id"]]["active"] = (bool)$row["is_active"];
             }
         } else {
             foreach ($result as $row) {
-                $a["id"] = $row["ID"];
-                $a["name"] = Main::addSymbol($row["Songname"]);
+                $a["id"] = $row["id"];
+                $a["name"] = Main::addSymbol($row["name"]);
                 try {
-                    $a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["info"] = json_decode($row["info"], true, 512, JSON_THROW_ON_ERROR);
+                    if(!isset($a["info"]["uploaddate"])){
+                        $a["info"]["uploaddate"] = $row["created_at"];
+                    }
                 } catch (\JsonException $e) {
                 }
-                $a["file"] = $row["Songfile"];
+                $a["file"] = $row["file"];
                 try {
-                    $a["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
-                    $a["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
-                    $a["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["comments"] = json_decode($row["comments"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["upvotes"] = json_decode($row["likes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["downvotes"] = json_decode($row["dislikes"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a["active"] = (bool)$row["Active"];
+                $a["active"] = (bool)$row["is_active"];
             }
         }
         return $a;
@@ -297,36 +293,39 @@ class song
         $namestring = $name === "" ? "" : " AND locate('$name',name)>0 ";
         $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
         $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `Upvotes` DESC" . $limitstring . $offsetstring . $namestring);
+        $result = $this->sql->result("SELECT * FROM `songs` ORDER BY `likes` DESC" . $limitstring . $offsetstring . $namestring);
         $a = array();
         foreach ($result as $row) {
-            $a[$row["ID"]]["id"] = $row["ID"];
-            $a[$row["ID"]]["name"] = Main::addSymbol($row["Songname"]);
+            $a[$row["id"]]["id"] = $row["id"];
+            $a[$row["id"]]["name"] = Main::addSymbol($row["name"]);
             try {
-                $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["info"] = json_decode($row["info"], true, 512, JSON_THROW_ON_ERROR);
+                if(!isset($a[$row["id"]]["info"]["uploaddate"])){
+                    $a[$row["id"]]["info"]["uploaddate"] = $row["created_at"];
+                }
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["file"] = $row["Songfile"];
+            $a[$row["id"]]["file"] = $row["file"];
             try {
-                $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
-                $a[$row["ID"]]["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
-                $a[$row["ID"]]["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["comments"] = json_decode($row["comments"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["upvotes"] = json_decode($row["likes"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["downvotes"] = json_decode($row["dislikes"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["active"] = (bool)$row["Active"];
+            $a[$row["id"]]["active"] = (bool)$row["is_active"];
         }
         return $a;
     }
 
     public function add(string $name, array $info, string $file): int
     {
-        $id = -1;
         try {
-            $id = $this->generateSongID();
+            $id = $this->sql->queryID("INSERT INTO `songs`( `name`, `info`, `file`, `comments`, `likes`, `dislikes`, `is_active`) VALUES" .
+                " ('$name','" . json_encode($info, JSON_THROW_ON_ERROR) . "','$file','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','1')");
             $file = "http://lvcharts.de/songdata/" . $id . "-" . $file;
-            $this->sql->query("INSERT INTO `songs`(`ID`, `Songname`, `Songinfo`, `Songfile`, `Comments`, `Upvotes`, `Downvotes`, `Active`) VALUES" .
-                " ('$id','$name','" . json_encode($info, JSON_THROW_ON_ERROR) . "','$file','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','1')");
+            $this->sql->query("UPDATE `songs` SET 'file'='$file' WHERE `id`='$id'");
         } catch (\JsonException $e) {
+            return -1;
         }
         $this->id = $id;
         $this->main->getLog()->sucesse("Der Song $name wurde erfolgreich hinzugefügt ID: $id", "Song Added");
@@ -339,7 +338,7 @@ class song
             return false;
         }
         $this->main->getLogs($this->id)->add();
-        $this->sql->query("DELETE FROM `songs` WHERE `ID`='$this->id'");
+        $this->sql->query("DELETE FROM `songs` WHERE `id`='$this->id'");
         $this->main->getLog()->danger("Der Song $this->id wurde erfolgreich entfernt", "Song Removed");
         return empty($this->get());
     }
@@ -350,7 +349,7 @@ class song
             return false;
         }
         if ($this->get()["active"] !== $active) {
-            $this->sql->query("UPDATE `songs` SET `Active`='$active' WHERE `ID`='$this->id'");
+            $this->sql->query("UPDATE `songs` SET `is_active`='$active' WHERE `id`='$this->id'");
         }
     }
 
@@ -364,7 +363,7 @@ class song
             $infostring = json_encode($info, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
         }
-        $this->sql->query("UPDATE `songs` SET `Songname`='$name',`Songinfo`='$infostring',`Active`='$as' WHERE `ID`='$this->id'");
+        $this->sql->query("UPDATE `songs` SET `name`='$name',`info`='$infostring',`is_active`='$as' WHERE `id`='$this->id'");
         $this->main->getLog()->info("Der Song $this->id wurde erfolgreich geupdatet", "Song Updatet");
     }
 
@@ -383,7 +382,7 @@ class song
         $a["time"] = date("H:i d.m.Y");
         $allcomments[$this->generateCommentID()] = $a;
         try {
-            $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            $this->sql->query("UPDATE `songs` SET `comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'");
             return true;
         } catch (\JsonException $e) {
         }
@@ -401,7 +400,7 @@ class song
         }
         unset($allcomments[$commentid]);
         try {
-            $this->sql->query("UPDATE `songs` SET `Comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            $this->sql->query("UPDATE `songs` SET `comments`='" . json_encode($allcomments, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'");
             return true;
         } catch (\JsonException $e) {
         }
@@ -421,12 +420,21 @@ class song
         if($this->hasVoted($userid,$downvotes)){
             return $this->removeVote($userid,$amount,$downvotes);
         }
-        $array = $downvotes ? $this->get()["downvotes"] : $this->get()["upvotes"];
-        $array[$userid] = $amount;
+        $likes = $this->get()["upvotes"];
+        $dislikes = $this->get()["downvotes"];
+        if ($downvotes) {
+            $dislikes[$userid] = $amount;
+            if(array_key_exists($userid, $likes)){
+                unset($likes[$userid]);
+            }
+        }else{
+            $likes[$userid] = $amount;
+            if(array_key_exists($userid, $dislikes)){
+                unset($dislikes[$userid]);
+            }
+        }
         try {
-            $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'"
-                : "UPDATE `songs` SET `Downvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'";
-            $this->sql->query($sql);
+            $this->sql->query("UPDATE `songs` SET `likes`='" . json_encode($likes, JSON_THROW_ON_ERROR) . "',`dislikes`='" . json_encode($dislikes, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'");
             return true;
         } catch (\JsonException $e) {
         }
@@ -441,8 +449,8 @@ class song
         $array = $downvotes ? $this->get()["downvotes"] : $this->get()["upvotes"];
         unset($array[$userid]);
         try {
-            $sql = !$downvotes ? "UPDATE `songs` SET `Upvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'"
-                : "UPDATE `songs` SET `Downvotes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'";
+            $sql = !$downvotes ? "UPDATE `songs` SET `likes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'"
+                : "UPDATE `songs` SET `dislikes`='" . json_encode($array, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'";
             $this->sql->query($sql);
             return true;
         } catch (\JsonException $e) {
@@ -461,21 +469,21 @@ class song
         $result = $this->sql->result("SELECT * FROM `songs`" . ($limit === -1 ? "" : " LIMIT " . $limit) . ($offset === -1 ? "" : " OFFSET " . $offset));
         $a = array();
         foreach ($result as $row) {
-            $a[$row["ID"]]["id"] = $row["ID"];
-            $a[$row["ID"]]["name"] = $row["Songname"];
+            $a[$row["id"]]["id"] = $row["id"];
+            $a[$row["id"]]["name"] = $row["name"];
             try {
-                $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["info"] = json_decode($row["info"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["file"] = $row["Songfile"];
+            $a[$row["id"]]["file"] = $row["file"];
             try {
-                $a[$row["ID"]]["comments"] = json_decode($row["Comments"], true, 512, JSON_THROW_ON_ERROR);
-                $a[$row["ID"]]["upvotes"] = json_decode($row["Upvotes"], true, 512, JSON_THROW_ON_ERROR);
-                $a[$row["ID"]]["downvotes"] = json_decode($row["Downvotes"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["comments"] = json_decode($row["comments"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["upvotes"] = json_decode($row["likes"], true, 512, JSON_THROW_ON_ERROR);
+                $a[$row["id"]]["downvotes"] = json_decode($row["dislikes"], true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
             }
-            $a[$row["ID"]]["votes"] = count($a[$row["ID"]]["upvotes"] ?? array());
-            $a[$row["ID"]]["active"] = (bool)$row["Active"];
+            $a[$row["id"]]["votes"] = count($a[$row["id"]]["likes"] ?? array());
+            $a[$row["id"]]["active"] = (bool)$row["is_active"];
         }
         return $this->main->arrsort($a, "votes");
     }
@@ -489,7 +497,7 @@ class song
     {
         try {
             $i = random_int(100, 99999999);
-            while (($this->sql->count("SELECT * FROM `songs` WHERE `ID`='$i'")) > 0) {
+            while (($this->sql->count("SELECT * FROM `songs` WHERE `id`='$i'")) > 0) {
                 $i = random_int(100, 99999999);
             }
             return $i;
@@ -503,7 +511,7 @@ class song
 
         try {
             $i = random_int(100, 99999999);
-            while (($this->sql->count("SELECT * FROM `charts` WHERE `ID`='$i'")) > 0) {
+            while (($this->sql->count("SELECT * FROM `charts` WHERE `id`='$i'")) > 0) {
                 $i = random_int(100, 99999999);
             }
             return $i;
@@ -542,27 +550,27 @@ class newsong
 
     public function get(): array
     {
-        $result = $this->sql->result(($this->id === 0 ? "SELECT * FROM `newsongs`" : "SELECT * FROM `newsongs` WHERE `ID`='$this->id'"));
+        $result = $this->sql->result(($this->id === 0 ? "SELECT * FROM `new_songs`" : "SELECT * FROM `new_songs` WHERE `id`='$this->id'"));
         $a = array();
         if ($this->id === 0) {
             foreach (($result) as $row) {
-                $a[$row["ID"]]["id"] = $row["ID"];
-                $a[$row["ID"]]["name"] = Main::addSymbol($row["Songname"]);
+                $a[$row["id"]]["id"] = $row["id"];
+                $a[$row["id"]]["name"] = Main::addSymbol($row["name"]);
                 try {
-                    $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["info"] = json_decode($row["info"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a[$row["ID"]]["file"] = $row["Songfile"];
+                $a[$row["id"]]["file"] = $row["file"];
             }
         } else {
             foreach (($result) as $row) {
-                $a["id"] = $row["ID"];
-                $a["name"] = Main::addSymbol($row["Songname"]);
+                $a["id"] = $row["id"];
+                $a["name"] = Main::addSymbol($row["name"]);
                 try {
-                    $a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
+                    $a["info"] = json_decode($row["info"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a["file"] = $row["Songfile"];
+                $a["file"] = $row["file"];
             }
         }
         return $a;
@@ -572,7 +580,7 @@ class newsong
     {
         try {
             $infos = json_encode($info, JSON_THROW_ON_ERROR);
-             $this->sql->query("INSERT INTO `newsongs`(`ID`, `Songname`, `Songinfo`, `Songfile`) VALUES (null,'$name','$infos','$file')");
+             $this->sql->query("INSERT INTO `new_songs`(`id`, `name`, `info`, `file`) VALUES (null,'$name','$infos','$file')");
         } catch (\JsonException $e) {
         }
     }
@@ -582,7 +590,7 @@ class newsong
         if (empty($this->get())) {
             return false;
         }
-        $this->sql->query("DELETE FROM `newsongs` WHERE `ID`='$this->id'");
+        $this->sql->query("DELETE FROM `new_songs` WHERE `id`='$this->id'");
         return empty($this->get());
     }
 
@@ -626,10 +634,9 @@ class charts
 
     public function create(string $startdate, string $enddate, array $songids): int
     {
-        $id = random_int(0, 99999999);
         try {
-            $this->sql->query("INSERT INTO `charts`(`ID`, `SongIDs`, `Votes`, `ENDDate`, `StartDate`, `Active`)" .
-                " VALUES ('$id','" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','0')");
+            $id = $this->sql->queryID("INSERT INTO `charts`(`song_ids`, `votes`, `end_date`, `start_date`, `is_active`)" .
+                " VALUES ('" . json_encode($songids, JSON_THROW_ON_ERROR) . "','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$enddate','$startdate','0')");
             $this->main->getLog()->sucesse("Die Charts mit der ID $id wurde hinzugefügt", "Charts Added");
             return $id;
         } catch (\JsonException $e) {
@@ -639,25 +646,25 @@ class charts
 
     public function get(bool $onlyactive=false): array
     {
-        $activ = $onlyactive ? " WHERE `Active`='1'" : "";
-        $activ1 = $onlyactive ? " AND `Active`='1'" : "";
-        $sql = $this->id === 0 ? "SELECT * FROM `charts`".$activ : "SELECT * FROM `charts` WHERE `ID`='$this->id'".$activ1;
+        $activ = $onlyactive ? " WHERE `is_active`='1'" : "";
+        $activ1 = $onlyactive ? " AND `is_active`='1'" : "";
+        $sql = $this->id === 0 ? "SELECT * FROM `charts`".$activ : "SELECT * FROM `charts` WHERE `id`='$this->id'".$activ1;
         $result = $this->sql->result($sql);
         $a = array();
             foreach ($result as $row) {
-                $a[$row["ID"]]["id"] = $row["ID"];
+                $a[$row["id"]]["id"] = $row["id"];
                 try {
-                    $a[$row["ID"]]["songid"] = json_decode($row["SongIDs"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["songid"] = json_decode($row["song_ids"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
                 try {
-                    $a[$row["ID"]]["votes"] = json_decode($row["Votes"], true, 512, JSON_THROW_ON_ERROR);
+                    $a[$row["id"]]["votes"] = json_decode($row["votes"], true, 512, JSON_THROW_ON_ERROR);
                 } catch (\JsonException $e) {
                 }
-                $a[$row["ID"]]["enddate"] = $row["ENDDate"];
-                $a[$row["ID"]]["startdate"] = $row["StartDate"];
-                $a[$row["ID"]]["active"] = (bool)$row["Active"];
-                $a[$row["ID"]]["autoset"] = (int)$row["AutoSet"];
+                $a[$row["id"]]["enddate"] = $row["end_date"];
+                $a[$row["id"]]["startdate"] = $row["start_date"];
+                $a[$row["id"]]["active"] = (bool)$row["is_active"];
+                $a[$row["id"]]["autoset"] = (int)$row["autoset"];
             }
         return $a;
     }
@@ -665,7 +672,7 @@ class charts
     public function deleteCharts(): bool
     {
         if (!empty($this->get())) {
-            return $this->sql->query("DELETE FROM `charts` WHERE `ID`='$this->id'");
+            return $this->sql->query("DELETE FROM `charts` WHERE `id`='$this->id'");
         }
         return false;
     }
@@ -686,7 +693,7 @@ class charts
         $votes[$userid][$songid] = $amount;
         if ($infos["active"]) {
             try {
-                $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+                $this->sql->query("UPDATE `charts` SET `votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'");
                 return true;
             } catch (\JsonException $e) {
             }
@@ -706,7 +713,7 @@ class charts
         $votes[$id][$songid] = $amount;
         if ($infos["active"]) {
             try {
-                $this->sql->query("UPDATE `charts` SET `Votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+                $this->sql->query("UPDATE `charts` SET `votes`='" . json_encode($votes, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'");
             } catch (\JsonException $e) {
             }
         }
@@ -732,7 +739,7 @@ class charts
     public function changeActive(): bool
     {
         if (!empty($this->get())) {
-            $this->sql->query("UPDATE `charts` SET `Active`='" . (!(bool)$this->get()["active"]? 1:0) . "' WHERE `ID`='$this->id'");
+            $this->sql->query("UPDATE `charts` SET `is_active`='" . (!$this->get()["active"]? 1:0) . "' WHERE `id`='$this->id'");
             return true;
         }
         return false;
@@ -797,11 +804,11 @@ class charts
 
     public function isNewSong(int $songid): bool
     {
-        $result = $this->sql->result("SELECT `SongIDs` FROM `charts`");
+        $result = $this->sql->result("SELECT `song_ids` FROM `charts`");
         $contains = 0;
         foreach($result as $row){
             try {
-                $songids = json_decode($row["SongIDs"], true, 512, JSON_THROW_ON_ERROR);
+                $songids = json_decode($row["song_ids"], true, 512, JSON_THROW_ON_ERROR);
                 if(in_array($songid, $songids, true)){
                     $contains++;
                     if($contains >= 2){
@@ -840,65 +847,38 @@ class songlogs
 
     public function get(bool $new = false): array
     {
-        $result = $this->sql->result(($this->id === 0 ? "SELECT * FROM `songlogs` WHERE `New`='$new'" : "SELECT * FROM `songlogs` WHERE `ID`='$this->id' AND `New`='$new'"));
+        $new1 = ($new ? "1" : "0");
+        $result = $this->sql->result(($this->id === 0 ? "SELECT * FROM `song_logs` WHERE `status_id`='$new1'" : "SELECT * FROM `song_logs` WHERE `id`='$this->id' AND `status_id`='$new1'"));
         $a = array();
         if ($this->id === 0) {
             foreach ($result as $row) {
-                $a[$row["ID"]]["id"] = $row["ID"];
-                $a[$row["ID"]]["name"] = $row["Songname"];
-                try {
-                    $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
-                } catch (\JsonException $e) {
-                }
-                $a[$row["ID"]]["date"] = ($row["Date"]);
-                $a[$row["ID"]]["status"] = (bool)($row["New"]);
+                $a[$row['id']] = [
+                    "id" => $row["id"],
+                    "songid" => $row["song_id"],
+                    "song" => $this->main->getSong($row["song_id"])->get(),
+                    "status_id" => $row["status_id"],
+                    "date" => $row["created_at"],
+                ];
             }
         } else {
             foreach ($result as $row) {
-                $a["id"] = $row["ID"];
-                $a["name"] = $row["Songname"];
-                try {
-                    $a["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
-                } catch (\JsonException $e) {
-                }
-                $a["date"] = ($row["Date"]);
-                $a["status"] = (bool)($row["New"]);
+                $a = [
+                    "id" => $row["id"],
+                    "songid" => $row["song_id"],
+                    "song" => $this->main->getSong($row["song_id"])->get(),
+                    "status_id" => $row["status_id"],
+                    "date" => $row["created_at"],
+                ];
             }
         }
         return $a;
     }
 
-    public function getAll(int $offset, int $limit, int $new = 2): array
-    {
-        $limitstring = $limit === -1 ? "" : " LIMIT " . $limit;
-        $offsetstring = $offset === -1 ? "" : " OFFSET " . $offset;
-        $result = $this->sql->result(($new !== 2 ? "SELECT * FROM `songlogs` WHERE `New`='$new' ORDER BY `ID` ASC" : "SELECT * FROM `songlogs` ORDER BY `ID` ASC") . $limitstring . $offsetstring);
-        $a = array();
-        foreach ($result as $row) {
-            $a[$row["ID"]]["id"] = $row["ID"];
-            $a[$row["ID"]]["name"] = $row["Songname"];
-            try {
-                $a[$row["ID"]]["info"] = json_decode($row["Songinfo"], true, 512, JSON_THROW_ON_ERROR);
-            } catch (\JsonException $e) {
-            }
-            $a[$row["ID"]]["date"] = ($row["Date"]);
-            $a[$row["ID"]]["status"] = (bool)($row["New"]);
-        }
-        return $a;
-    }
 
     public function add(bool $new = false): bool
     {
-        $infostring = "";
-        $date = date("d.m.Y");
-        $i = $this->main->getSong($this->id)->get();
-        $name = $i["name"];
-        try {
-            $infostring = json_encode($i["info"], JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-        }
         $newstring = ($new ? 1 : 0);
-        $this->sql->query("INSERT INTO `songlogs`(`ID`, `Songname`, `Songinfo`, `Date`, `New`) VALUES ('$this->id','$name','$infostring','$date','$newstring')");
+        $this->sql->query("INSERT INTO `song_logs`(`song_id`, `status_id`) VALUES ('$this->id', '$newstring')");
         return true;
     }
 
@@ -907,7 +887,7 @@ class songlogs
         if (empty($this->main->getSong($this->id)->get())) {
             return false;
         }
-        $this->sql->query("DELETE FROM `songlogs` WHERE `ID`='$this->id'");
+        $this->sql->query("DELETE FROM `song_logs` WHERE `id`='$this->id'");
         return empty($this->main->getSong($this->id)->get());
     }
 
@@ -940,26 +920,26 @@ class contest
     {
         $ar = array();
 
-        $sql = $this->id === 0 ? "SELECT * FROM `contest` WHERE `Activ`='$active'" : "SELECT * FROM `contest` WHERE `ID`='$this->id'";
+        $sql = $this->id === 0 ? "SELECT * FROM `contests` WHERE `is_active`='$active'" : "SELECT * FROM `contests` WHERE `id`='$this->id'";
         $result = $this->sql->result($sql);
         try {
             if ($this->id === 0) {
                 foreach ($result as $row) {
-                    $ar[$row["ID"]]["id"] = (int)$row["ID"];
-                    $ar[$row["ID"]]["name"] = $row["Name"];
-                    $ar[$row["ID"]]["user"] = json_decode($row["Users"], true, 512, JSON_THROW_ON_ERROR);
-                    $ar[$row["ID"]]["startdate"] = strtotime($row["StartingDate"]);
-                    $ar[$row["ID"]]["enddate"] = strtotime($row["EndingDate"]);
-                    $ar[$row["ID"]]["active"] = (bool)$row["Active"];
+                    $ar[$row["id"]]["id"] = (int)$row["id"];
+                    $ar[$row["id"]]["name"] = $row["name"];
+                    $ar[$row["id"]]["user"] = json_decode($row["user_ids"], true, 512, JSON_THROW_ON_ERROR);
+                    $ar[$row["id"]]["startdate"] = strtotime($row["start_date"]);
+                    $ar[$row["id"]]["enddate"] = strtotime($row["end_date"]);
+                    $ar[$row["id"]]["active"] = (bool)$row["is_active"];
                 }
             } else {
                 foreach ($result as $row) {
-                    $ar["id"] = (int)$row["ID"];
-                    $ar["name"] = $row["Name"];
-                    $ar["user"] = json_decode($row["Users"], true, 512, JSON_THROW_ON_ERROR);
-                    $ar["startdate"] = strtotime($row["StartingDate"]);
-                    $ar["enddate"] = strtotime($row["EndingDate"]);
-                    $ar["active"] = (bool)$row["Active"];
+                    $ar["id"] = (int)$row["id"];
+                    $ar["name"] = $row["name"];
+                    $ar["user"] = json_decode($row["user_ids"], true, 512, JSON_THROW_ON_ERROR);
+                    $ar["startdate"] = strtotime($row["start_date"]);
+                    $ar["enddate"] = strtotime($row["end_date"]);
+                    $ar["active"] = (bool)$row["is_active"];
                 }
             }
         } catch (\JsonException $e) {
@@ -970,10 +950,8 @@ class contest
     public function add(string $name, $startdate, $enddate): int
     {
         try {
-            $i = random_int(1, 9999999);
-            $this->sql->query("INSERT INTO `contest`(`ID`, `Name`, `Users`, `StartingDate`, `EndingDate`, `Activ`)" .
-                " VALUES ('$i','$name','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$startdate','$enddate','true')");
-            return $i;
+           return $this->sql->queryID("INSERT INTO `contests`( `name`, `user_ids`, `start_date`, `end_date`, `is_active`)" .
+                " VALUES ('$name','" . json_encode(array(), JSON_THROW_ON_ERROR) . "','$startdate','$enddate','1')");
         } catch (\Exception $e) {
         }
         return 0;
@@ -984,13 +962,13 @@ class contest
         if (empty($this->get())) {
             return false;
         }
-        $this->sql->query("DELETE FROM `contest` WHERE `ID`='$this->id'");
+        $this->sql->query("DELETE FROM `contests` WHERE `id`='$this->id'");
         return empty($this->get());
     }
 
     public function updateStatus(bool $status = false): bool
     {
-        return $this->sql->query("UPDATE `contest` SET `Activ`='$status' WHERE `ID`='$this->id'");
+        return $this->sql->query("UPDATE `contests` SET `is_active`='$status' WHERE `id`='$this->id'");
     }
 
     public function addUser($user): bool
@@ -1001,7 +979,7 @@ class contest
         $users = $this->get()["user"];
         $users[] = $user;
         try {
-            return $this->sql->query("UPDATE `contest` SET `Users`='" . json_encode($users, JSON_THROW_ON_ERROR) . "' WHERE `ID`='$this->id'");
+            return $this->sql->query("UPDATE `contests` SET `user_ids`='" . json_encode($users, JSON_THROW_ON_ERROR) . "' WHERE `id`='$this->id'");
         } catch (\JsonException $e) {
         }
         return false;
@@ -1254,23 +1232,23 @@ class brodcastdates{
 
     public function getNextDate():int{
 
-        $result = $this->sql->result("SELECT `ID` FROM `broadcastdate` WHERE `NEXT`='1'");
+        $result = $this->sql->result("SELECT `id` FROM `brodcastdates` WHERE `NEXT`='1'");
         foreach ($result as $row){
-            return $row['ID'];
+            return $row['id'];
         }
         return 1;
     }
 
     public function get(int $id = 0):array{
         $data = [];
-        $result = $this->sql->result("SELECT * FROM `broadcastdate`".($id===0?"":" WHERE `ID`='".$id."'"));
+        $result = $this->sql->result("SELECT * FROM `brodcastdates`".($id===0?"":" WHERE `id`='".$id."'"));
         foreach ($result as $row){
-            $data[$row['ID']] = array(
-                "Weekday" => (int)$row['Weekday'],
-                "Delay" => (int)$row['Delay'],
-                "Time" => $row['Time'],
-                "Link" => $row['Link'],
-                "Name" => $row['Name']
+            $data[$row['id']] = array(
+                "Weekday" => (int)$row['weekday'],
+                "Delay" => (int)$row['delay'],
+                "Time" => $row['time'],
+                "Link" => $row['link'],
+                "Name" => $row['name']
             );
         }
         return $data;
@@ -1290,13 +1268,13 @@ class brodcastdates{
         return $day[$int];
     }
 
-    public function addDate($weekday, $delay, $time, $link, $name):void
+    public function addDate($weekday, $delay, $time, $link, $name,$lastbrodcast):void
     {
-        $this->sql->query("INSERT INTO `broadcastdate`(`Weekday`, `Delay`, `Time`, `Link`, `Name`) VALUES ('$weekday','$delay','$time','$link','$name')");
+        $this->sql->query("INSERT INTO `brodcastdates`(`name`, `weekday`, `delay`, `time`, `link`, `last_brodcast`) VALUES ('$name','$weekday','$delay','$time','$link','$lastbrodcast')");
     }
 
     public function removeDate(int $id):void{
-        $this->sql->query("DELETE FROM `broadcastdate` WHERE `ID` = '$id'");
+        $this->sql->query("DELETE FROM `brodcastdates` WHERE `id` = '$id'");
     }
 
 }
