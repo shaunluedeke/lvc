@@ -663,6 +663,8 @@ class charts
                 }
                 $a[$row["id"]]["enddate"] = $row["end_date"];
                 $a[$row["id"]]["startdate"] = $row["start_date"];
+                $a[$row["id"]]["showdate"] = $row["show_date"];
+                $a[$row["id"]]["canbeshown"] = strtotime($row["show_date"])<=time();
                 $a[$row["id"]]["active"] = (bool)$row["is_active"];
                 $a[$row["id"]]["autoset"] = (int)$row["autoset"];
             }
@@ -820,6 +822,8 @@ class charts
         }
         return true;
     }
+
+
 }
 
 class songlogs

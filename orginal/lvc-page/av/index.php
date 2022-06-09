@@ -87,17 +87,22 @@ if (count($chart->get()) < 1) {
         }
 
         $form->addTitle("Charts");
-        $active = ($chart->get()[$id]["active"] && $chart->isStarted() && !$chart->isEnded());
+        $get = $chart->get()[$id];
+        $active = ($get["active"] && $chart->isStarted() && !$chart->isEnded());
+        $canbeshown = (bool)($get["canbeshown"]);
         if (!$active) {
+            if(!$canbeshown) {
+                $form->addText("<p class='alert alert-danger'>Das Ergebniss wird noch nicht angezeigt. Das Ergebnis kann am ".date('d.m.Y',strtotime($get['showdate']))." um ".date('H.i',strtotime($get['showdate']))."</p><br><br>");
+            }
             if ($chart->isEnded()) {
-                $form->addText('Die Charts wurden am ' . date("d.m.Y", strtotime($chart->get()[$id]["enddate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["enddate"])) . ' automatisch geschlossen.<br><br>');
+                $form->addText('<p class="alert alert-warning">Die Charts wurden am ' . date("d.m.Y", strtotime($get["enddate"])) . ' um ' . date("H:i:s", strtotime($get["enddate"])) . ' automatisch geschlossen.</p><br><br>');
             } else if (!$chart->isStarted()) {
-                $form->addText('Die Charts werden am ' . date("d.m.Y", strtotime($chart->get()[$id]["startdate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["startdate"])) . ' automatisch geöffnet.<br><br>');
+                $form->addText('<p class="alert alert-warning">Die Charts werden am ' . date("d.m.Y", strtotime($get["startdate"])) . ' um ' . date("H:i:s", strtotime($get["startdate"])) . ' automatisch geöffnet.</p><br><br>');
             } else {
-                $form->addText('Die Charts wurden manuel geschlossen.<br><br>');
+                $form->addText('<p class="alert alert-warning">Die Charts wurden manuel geschlossen.<br><br>');
             }
         } else {
-            $form->addText('Die Charts werden nach dem ' . date("d.m.Y", strtotime($chart->get()[$id]["enddate"])) . ' um ' . date("H:i:s", strtotime($chart->get()[$id]["enddate"])) . ' automatisch geschlossen.<br><br>');
+            $form->addText('<p class="alert alert-success">Die Charts werden nach dem ' . date("d.m.Y", strtotime($get["enddate"])) . ' um ' . date("H:i:s", strtotime($get["enddate"])) . ' automatisch geschlossen.</p><br><br>');
         }
 
         echo($form->show());
@@ -120,7 +125,8 @@ if (count($chart->get()) < 1) {
             }
             $form->addText("</tbody></table><br><br>");
             $form->addButton("Abstimmen", "button", "av/$id");
-        } else if ($active && $voted) {
+        }
+        else if ((!$canbeshown || $active) && $voted) {
             $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
            data-search="false">
         <thead>
@@ -159,7 +165,24 @@ if (count($chart->get()) < 1) {
                                      </tr>');
             }
             $form->addText("</tbody></table><br><br>");
-        } else {
+        }
+        else if(!$canbeshown){
+            $form->addTableHeader(["","Song Name", "Song Author","Song"]);
+            $chartssongs = $chart->get();
+            foreach ($chartssongs[$id]["songid"] as $value) {
+                $song = $main->getSong((int)$value);
+                $info = $song->get();
+                $new = $chart->isNewSong($value);
+                $form->addText('<tr>
+                                        <td style="width: 5%">' . ($new ? '<span class="badge badge-success">Neu</span>' : '') . '</td>
+                                        <td style="width: 30%">' . Main::addSymbol($info["name"]) . '</td>
+                                        <td style="width: 35%">' . Main::addSymbol($info["info"]["author"]) . '</td>
+                                        <td style="width: 15%"><a href="index.php?song&id='.$value.'&autoplay=1" target="_blank">Anhören</a></td>
+                                        </tr>');
+            }
+            $form->addText("</tbody></table><br><br>");
+        }
+        else {
             $form->addText('<table id="Table" class="table table-striped" data-toggle="table" data-pagination="true"
            data-search="false">
         <thead>
