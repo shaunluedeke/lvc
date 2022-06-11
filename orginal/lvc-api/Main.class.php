@@ -238,6 +238,11 @@ class song
     }
 
     #region Info
+
+    public function exists():bool{
+        return $this->sql->count("SELECT `id` FROM `songs` WHERE `id`='$this->id'") > 0;
+    }
+
     public function get(): array
     {
         $sql = $this->id === 0 ? "SELECT * FROM `songs`" : "SELECT * FROM `songs` WHERE `id`='$this->id'";
@@ -784,6 +789,16 @@ class charts
                     $ar[$cv["id"]][$key] = $num;
                 }
             }
+            foreach ($ar[$cv["id"]] as $key => $v){
+                if(!in_array($key, $cv["songid"], true)) {
+                    unset($ar[$cv["id"]][$key]);
+                    continue;
+                }
+
+                if(!$this->main->getSong($key)->exists()){
+                    unset($ar[$cv["id"]][$key]);
+                }
+            }
         }else{
             $cl = $this->get();
             foreach ($cl[$this->id]["votes"] as $key => $value) {
@@ -799,6 +814,14 @@ class charts
                     continue;
                 }
                 $ar[$key] = $num;
+            }
+            foreach ($ar as $key => $v){
+                if(!in_array($key, $cl[$this->id]["songid"], true)) {
+                    unset($ar[$key]);
+                }
+                if(!$this->main->getSong($key)->exists()){
+                    unset($ar[$key]);
+                }
             }
         }
         return $ar;
