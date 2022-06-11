@@ -774,6 +774,7 @@ class charts
         if($this->id === 0) {
             $cl = $this->get();
             foreach ($cl as $c => $cv) {
+                print_r($cv["votes"]);
                 foreach ($cv["votes"] as $key => $value) {
                     foreach ($value as $key2 => $value2) {
                         $num = ($ar[$cv["id"]][$key2]) ?? 0;
@@ -801,6 +802,7 @@ class charts
             }
         }else{
             $cl = $this->get();
+
             foreach ($cl[$this->id]["votes"] as $key => $value) {
                 foreach ($value as $key2 => $value2) {
                     $num = ($ar[$key2]) ?? 0;
@@ -816,9 +818,6 @@ class charts
                 $ar[$key] = $num;
             }
             foreach ($ar as $key => $v){
-                if(!in_array($key, $cl[$this->id]["songid"], true)) {
-                    unset($ar[$key]);
-                }
                 if(!$this->main->getSong($key)->exists()){
                     unset($ar[$key]);
                 }
