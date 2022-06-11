@@ -12,22 +12,41 @@ class Forwarding
         $this->main = new Main;
     }
 
-    public function addSong($data): string
+    public function addSong($data,bool $admin): string
     {
-        if ($this->check_file_is_audio(pathinfo($data["files"]["songdata"]['name'])['extension'])) {
-            $newfilename = Main::deleteSymbol($data["songauthor"] . "-" . $data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension'];
-            if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/new/" . $newfilename)) {
+        if(!$admin) {
+            if ($this->check_file_is_audio(pathinfo($data["files"]["songdata"]['name'])['extension'])) {
+                $newfilename = Main::deleteSymbol($data["songauthor"] . "-" . $data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension'];
+                if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/new/" . $newfilename)) {
+                    $info = array();
+                    $info["uploaddate"] = date("d.m.Y");
+                    $info["author"] = Main::removeSymbol($data["songauthor"]);
+                    $info["infotxt"] = Main::removeSymbol($data["songinfo"]);
+
+                    $this->main->getNewSong()->add($data["songname"], $info, "http://lvcharts.de/songdata/new/" . $newfilename);
+                    return "./index.php?song-add/&status=success";
+                }
+                return "./index.php?song-add/&status=error&error=1002";
+            }
+            return "./index.php?song-add/&status=error&error=1001";
+        }else {
+            if ($this->check_file_is_audio(pathinfo($data["files"]["songdata"]['name'])['extension'])) {
                 $info = array();
                 $info["uploaddate"] = date("d.m.Y");
                 $info["author"] = Main::removeSymbol($data["songauthor"]);
                 $info["infotxt"] = Main::removeSymbol($data["songinfo"]);
-
-                $this->main->getNewSong()->add($data["songname"], $info, "http://lvcharts.de/songdata/new/" . $newfilename);
-                return "./index.php?song-add/&status=success";
+                $id = $this->main->getSong()->add(Main::removeSymbol($data["songname"]), $info, Main::deleteSymbol($data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension']);
+                if ($id < 0) {
+                    return "./index.php?admin/&page=addsong&status=error&error=1003";
+                }
+                if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/" . $id . "-" .
+                    Main::deleteSymbol($data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension'])) {
+                    return "./index.php?admin/&page=addsong&status=success&id=" . $id;
+                }
+                return "./index.php?admin/&page=addsong&status=error&error=1002";
             }
-            return "./index.php?song-add/&status=error&error=1002";
+            return "./index.php?admin/&page=addsong&status=error&error=1001";
         }
-        return "./index.php?song-add/&status=error&error=1001";
     }
 
     public function addAdminSong($data): string
@@ -43,7 +62,6 @@ class Forwarding
             }
             if (move_uploaded_file($data["files"]["songdata"]['tmp_name'], "/var/www/html/songdata/" . $id . "-" .
                 Main::deleteSymbol($data["songname"]) . "." . pathinfo($data["files"]["songdata"]['name'])['extension'])) {
-                echo("3<br>");
                 return "./index.php?admin/&page=addsong&status=success&id=" . $id;
             }
             return "./index.php?admin/&page=addsong&status=error&error=1002";

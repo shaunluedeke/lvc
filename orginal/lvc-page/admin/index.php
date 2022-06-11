@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 use wcf\system\lvc\Main;
 use wcf\system\lvc\Form;
+use wcf\system\WCF;
 
 $form = new Form();
 $main = new Main();

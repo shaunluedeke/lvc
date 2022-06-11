@@ -54,7 +54,7 @@ switch ($type) {
 
     case "songadd":
     {
-        $http_refere = $forward->addSong($data);
+        $http_refere = $forward->addSong($data,$user->userOnlineGroupID===4);
         break;
     }
     case "addcomment":
